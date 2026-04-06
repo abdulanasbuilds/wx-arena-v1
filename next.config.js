@@ -8,9 +8,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Static export for any platform
-  output: 'export',
-  distDir: 'dist',
   // Images configuration
   images: {
     unoptimized: true,
