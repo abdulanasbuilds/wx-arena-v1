@@ -47,7 +47,7 @@ export function Footer() {
         <div className="mt-4 pt-4 border-t border-[#1a1a2e]">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
             <p className="text-xs text-[#64748b] tracking-wider uppercase">
-              Built by <span className="text-[#a855f7] font-semibold">Abdul Anas</span>
+              BUILT BY <span className="text-[#a855f7] font-bold">ABDUL ANAS</span>
             </p>
             <div className="flex items-center gap-3">
               {SOCIAL_LINKS.map(({ label, href }) => (

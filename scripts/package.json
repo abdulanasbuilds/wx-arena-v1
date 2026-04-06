@@ -1,0 +1,8 @@
+{
+  "name": "wx-arena-auto-setup",
+  "version": "1.0.0",
+  "scripts": {
+    "prebuild": "node scripts/auto-setup.js",
+    "postinstall": "node scripts/postinstall.js"
+  }
+}
