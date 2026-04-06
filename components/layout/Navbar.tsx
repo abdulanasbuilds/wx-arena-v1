@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { NotificationsDropdown } from "@/components/features/NotificationsDropdown";
 
 interface NavLink {
   label: string;
@@ -61,6 +62,11 @@ export function Navbar() {
               </Link>
             );
           })}
+        </div>
+        
+        {/* Notifications & Profile */}
+        <div className="hidden md:flex items-center gap-2">
+          <NotificationsDropdown />
         </div>
         
         {/* Mobile Menu Button */}
