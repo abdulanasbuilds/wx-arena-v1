@@ -1,0 +1,101 @@
+# WX ARENA — Project Rules for Zed AI
+
+## Stack (NEVER deviate from this)
+- Next.js 16 (App Router, TypeScript strict)
+- Tailwind CSS v4
+- Supabase SSR (@supabase/ssr) — server: getUser() NEVER getSession()
+- Framer Motion for animations
+- Zod for all validation
+- Upstash Redis for rate limiting
+- lucide-react for icons
+- Named exports only (except page.tsx default exports)
+
+## Next.js 16 Rules
+- middleware.ts is RENAMED to proxy.ts — never create middleware.ts
+- All params in pages/layouts are async: const { id } = await params
+- Use "use cache" directive instead of PPR
+- Turbopack is the default bundler — no webpack config needed
+
+## Supabase Rules
+- Server client: always import from @/lib/supabase/server
+- Browser client: always import from @/lib/supabase/client
+- NEVER call getSession() on the server — only getUser()
+- All tables have RLS enabled
+
+## Code Style
+- TypeScript strict mode — no 'any' types
+- All components export named exports
+- Use cn() from @/lib/utils/cn for className merging
+- Keep components under 200 lines — split if larger
+- No console.log in production code — use proper error handling
+
+## File Structure
+- App routes: app/(app)/ for protected pages
+- App routes: app/(auth)/ for login/register
+- API routes: app/api/
+- Components: components/ui/ components/layout/ components/features/
+- Lib: lib/supabase/ lib/security/ lib/validation/ lib/utils/
+
+## Testing
+- After each section: run `npm run type-check` — must pass with 0 errors
+- Run `npm run dev` — must start without errors
+- Check browser at localhost:3000
+
+
+# WX ARENA — Agent Context
+
+## What This Project Is
+WX ARENA is a skill-based competitive gaming PWA for mobile-first markets in Africa, 
+Southeast Asia, and Latin America. Games: eFootball, Dream League Soccer, Free Fire, 
+PUBG Mobile, COD Mobile, EA FC 25.
+
+## Current Build Phase
+MVP — virtual points only (no real money). Phase 2 will add Paystack/Flutterwave.
+
+## Key Decisions
+- Next.js 16 + Supabase SSR (not Firebase, not Express)
+- Vercel deployment
+- PWA via @ducanh2912/next-pwa
+- Virtual wallet (WX Points) — no real-money until licensing secured
+
+## Do NOT
+- Add Express.js or any separate backend server
+- Use getSession() on the server
+- Create middleware.ts (use proxy.ts instead)
+- Use default exports in components (only in page.tsx files)
+- Add purple gradients on white — this is a DARK app only
+
+Install all dependencies (run in terminal)
+bashnpm install \
+  @supabase/supabase-js@latest \
+  @supabase/ssr@latest \
+  framer-motion@latest \
+  zod@latest \
+  @upstash/redis@latest \
+  @upstash/ratelimit@latest \
+  lucide-react@latest \
+  clsx@latest \
+  tailwind-merge@latest \
+  @ducanh2912/next-pwa@latest
+
+npm install --save-dev \
+  @types/node@latest
+  
+  
+  Context:
+This is a Next.js 16 App Router project.
+
+Task:
+Clean the default template.
+
+Do:
+- Remove unnecessary demo content
+- Keep layout.tsx minimal
+- Keep page.tsx simple
+
+Constraints:
+- Do not break the app
+- Keep it compiling
+
+Output:
+Update only existing files.
