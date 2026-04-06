@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/utils/cn";
 import type { Match, MatchStatus, UserProfile } from "@/types/app.types";
 import { Swords, Plus, Inbox } from "lucide-react";
+import { MatchmakingQueue } from "@/components/features/MatchmakingQueue";
 
 // ─── Types for Supabase data ──────────────────────────────────────────────────
 
@@ -75,12 +76,12 @@ function mapSupabaseMatch(match: SupabaseMatch): Match {
     status: match.status as Match["status"],
     wager_points: match.wager_points,
     player_1_id: match.player_1_id,
-    player_2_id: match.player_2_id,
-    winner_id: match.winner_id,
+    player_2_id: match.player_2_id || undefined,
+    winner_id: match.winner_id || undefined,
     created_at: match.created_at,
     completed_at: match.completed_at,
     player_1: mapSupabaseProfile(match.player_1)!,
-    player_2: mapSupabaseProfile(match.player_2),
+    player_2: mapSupabaseProfile(match.player_2) || undefined,
   };
 }
 
@@ -321,16 +322,30 @@ export default function MatchesPage() {
             className="gap-2 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
-            Find Match
+            Create Match
           </Button>
         </Link>
       </div>
 
-      {/* ── Filtered match grid ── */}
-      <MatchesClient
-        matches={matches}
-        currentUserId={userId ?? ""}
-      />
+      {/* ── Matchmaking Queue ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <MatchmakingQueue 
+            userId={userId ?? ""} 
+            onMatchFound={(opponent) => {
+              console.log("Match found with:", opponent);
+              // Navigate to match lobby or show match found modal
+            }}
+          />
+        </div>
+        <div className="lg:col-span-2">
+          {/* ── Filtered match grid ── */}
+          <MatchesClient
+            matches={matches}
+            currentUserId={userId ?? ""}
+          />
+        </div>
+      </div>
     </div>
   );
 }
