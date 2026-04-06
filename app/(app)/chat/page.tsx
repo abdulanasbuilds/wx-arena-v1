@@ -1,265 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Send, Plus, MessageCircle, Users, Gamepad2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Send, Plus, MessageCircle, Users, Smile, Gamepad2 } from "lucide-react";
+import { useRef } from "react";
+import type { ChatMessage } from "@/types/app.types";
 import { createClient } from "@/lib/supabase/client";
-import { ChatCard } from "@/components/features/ChatCard";
+import { useRealtimeChat } from "@/hooks/useRealtimeChat";
+import { useFriends } from "@/hooks/useFriends";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/utils/cn";
-import type { ChatRoom, ChatMessage } from "@/types/app.types";
+import type { ChatRoom } from "@/types/app.types";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+const REACTIONS = ["👍", "❤️", "😂", "🔥", "😮", "👏"];
 
-const now = Date.now();
-const ts = (offsetMs: number) => new Date(now - offsetMs).toISOString();
-
-const MOCK_ROOMS: ChatRoom[] = [
-  {
-    id: "room-1",
-    name: "eFootball Arena",
-    type: "game_room",
-    game_id: "efootball",
-    participants: ["current-user-id", "opp-1", "opp-2"],
-    unread_count: 3,
-    last_message: {
-      id: "lm1",
-      room_id: "room-1",
-      user_id: "opp-1",
-      content: "Anyone up for a quick 1v1?",
-      created_at: ts(1000 * 60 * 2),
-    },
-  },
-  {
-    id: "room-2",
-    name: "Free Fire HQ",
-    type: "game_room",
-    game_id: "free-fire",
-    participants: ["current-user-id", "opp-3"],
-    unread_count: 0,
-    last_message: {
-      id: "lm2",
-      room_id: "room-2",
-      user_id: "current-user-id",
-      content: "GG! Rematch tomorrow?",
-      created_at: ts(1000 * 60 * 45),
-    },
-  },
-  {
-    id: "room-3",
-    name: "WX General",
-    type: "group",
-    participants: ["current-user-id", "opp-1", "opp-2", "opp-3", "opp-4"],
-    unread_count: 12,
-    last_message: {
-      id: "lm3",
-      room_id: "room-3",
-      user_id: "opp-2",
-      content: "Season 3 tournament starts Friday 🔥",
-      created_at: ts(1000 * 60 * 8),
-    },
-  },
-  {
-    id: "room-4",
-    name: "DragonKick",
-    type: "direct",
-    participants: ["current-user-id", "opp-1"],
-    unread_count: 1,
-    last_message: {
-      id: "lm4",
-      room_id: "room-4",
-      user_id: "opp-1",
-      content: "Yo, want to wager 500 pts?",
-      created_at: ts(1000 * 60 * 20),
-    },
-  },
-];
-
-const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
-  "room-1": [
-    {
-      id: "msg-1-1",
-      room_id: "room-1",
-      user_id: "opp-1",
-      content: "Welcome to the eFootball Arena channel!",
-      created_at: ts(1000 * 60 * 30),
-    },
-    {
-      id: "msg-1-2",
-      room_id: "room-1",
-      user_id: "current-user-id",
-      content: "Let's run it 🔥 I'm ready.",
-      created_at: ts(1000 * 60 * 20),
-    },
-    {
-      id: "msg-1-3",
-      room_id: "room-1",
-      user_id: "opp-2",
-      content: "Count me in. 200 pts wager?",
-      created_at: ts(1000 * 60 * 15),
-    },
-    {
-      id: "msg-1-4",
-      room_id: "room-1",
-      user_id: "current-user-id",
-      content: "Make it 300 and I'm in.",
-      created_at: ts(1000 * 60 * 10),
-    },
-    {
-      id: "msg-1-5",
-      room_id: "room-1",
-      user_id: "opp-1",
-      content: "Anyone up for a quick 1v1?",
-      created_at: ts(1000 * 60 * 2),
-    },
-  ],
-  "room-2": [
-    {
-      id: "msg-2-1",
-      room_id: "room-2",
-      user_id: "opp-3",
-      content: "That was a close match bro",
-      created_at: ts(1000 * 60 * 60),
-    },
-    {
-      id: "msg-2-2",
-      room_id: "room-2",
-      user_id: "current-user-id",
-      content: "You got me in the final zone lol",
-      created_at: ts(1000 * 60 * 55),
-    },
-    {
-      id: "msg-2-3",
-      room_id: "room-2",
-      user_id: "opp-3",
-      content: "Skill diff 😈",
-      created_at: ts(1000 * 60 * 50),
-    },
-    {
-      id: "msg-2-4",
-      room_id: "room-2",
-      user_id: "current-user-id",
-      content: "Next time I'm not missing 💀",
-      created_at: ts(1000 * 60 * 48),
-    },
-    {
-      id: "msg-2-5",
-      room_id: "room-2",
-      user_id: "current-user-id",
-      content: "GG! Rematch tomorrow?",
-      created_at: ts(1000 * 60 * 45),
-    },
-  ],
-  "room-3": [
-    {
-      id: "msg-3-1",
-      room_id: "room-3",
-      user_id: "opp-4",
-      content: "Who's participating in Season 3?",
-      created_at: ts(1000 * 60 * 25),
-    },
-    {
-      id: "msg-3-2",
-      room_id: "room-3",
-      user_id: "current-user-id",
-      content: "Me for sure. Already signed up.",
-      created_at: ts(1000 * 60 * 20),
-    },
-    {
-      id: "msg-3-3",
-      room_id: "room-3",
-      user_id: "opp-1",
-      content: "Same, locked and loaded 💪",
-      created_at: ts(1000 * 60 * 15),
-    },
-    {
-      id: "msg-3-4",
-      room_id: "room-3",
-      user_id: "opp-3",
-      content: "Prize pool is 50,000 pts this time!",
-      created_at: ts(1000 * 60 * 12),
-    },
-    {
-      id: "msg-3-5",
-      room_id: "room-3",
-      user_id: "opp-2",
-      content: "Season 3 tournament starts Friday 🔥",
-      created_at: ts(1000 * 60 * 8),
-    },
-  ],
-  "room-4": [
-    {
-      id: "msg-4-1",
-      room_id: "room-4",
-      user_id: "current-user-id",
-      content: "Good game earlier man",
-      created_at: ts(1000 * 60 * 40),
-    },
-    {
-      id: "msg-4-2",
-      room_id: "room-4",
-      user_id: "opp-1",
-      content: "Yeah that was intense!",
-      created_at: ts(1000 * 60 * 35),
-    },
-    {
-      id: "msg-4-3",
-      room_id: "room-4",
-      user_id: "current-user-id",
-      content: "Rematch anytime. I'll be ready.",
-      created_at: ts(1000 * 60 * 30),
-    },
-    {
-      id: "msg-4-4",
-      room_id: "room-4",
-      user_id: "opp-1",
-      content: "Say less. Let's make it interesting 😏",
-      created_at: ts(1000 * 60 * 25),
-    },
-    {
-      id: "msg-4-5",
-      room_id: "room-4",
-      user_id: "opp-1",
-      content: "Yo, want to wager 500 pts?",
-      created_at: ts(1000 * 60 * 20),
-    },
-  ],
-};
-
-const USER_NAMES: Record<string, string> = {
-  "current-user-id": "GhostSniper",
-  "opp-1": "DragonKick",
-  "opp-2": "PhantomBlaze",
-  "opp-3": "SteelNova",
-  "opp-4": "VoidReaper",
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getRoomTypeLabel(type: ChatRoom["type"]): string {
-  if (type === "game_room") return "Game Room";
-  if (type === "group") return "Group";
-  return "Direct";
-}
-
-function getRoomTypeBadgeVariant(
-  type: ChatRoom["type"],
-): "info" | "success" | "default" {
-  if (type === "game_room") return "info";
-  if (type === "group") return "success";
-  return "default";
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Main Chat Page ───────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -279,13 +36,50 @@ function EmptyState() {
   );
 }
 
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function getRoomTypeLabel(type: string): string {
+  if (type === "game_room") return "Game Room";
+  if (type === "group") return "Group";
+  return "Direct";
+}
+
+function getRoomTypeBadgeVariant(type: string): "info" | "success" | "default" {
+  if (type === "game_room") return "info";
+  if (type === "group") return "success";
+  return "default";
+}
+
+interface ChatCardProps {
+  room: any;
+  onClick: () => void;
+}
+
+function ChatCard({ room, onClick }: ChatCardProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left hover:bg-[#1a1a2e] transition-colors"
+    >
+      <span className="text-2xl">
+        {room.type === "game_room" ? "🎮" : room.type === "group" ? "👥" : "💬"}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-[#f1f5f9] truncate">{room.name}</p>
+        <p className="text-xs text-[#64748b] capitalize">{room.type?.replace("_", " ")}</p>
+      </div>
+    </button>
+  );
+}
 interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
 }
 
 function MessageBubble({ message, isOwn }: MessageBubbleProps) {
-  const name = USER_NAMES[message.user_id] ?? "Unknown";
+  const name = message.username ?? "Unknown";
   return (
     <div className={cn("flex items-end gap-2", isOwn && "flex-row-reverse")}>
       {!isOwn && (

@@ -419,3 +419,155 @@ CREATE INDEX IF NOT EXISTS idx_linked_games_user_id ON public.linked_games (user
 -- chat_room_members: lookups by room and user
 CREATE INDEX IF NOT EXISTS idx_chat_room_members_room_id ON public.chat_room_members (room_id);
 CREATE INDEX IF NOT EXISTS idx_chat_room_members_user_id ON public.chat_room_members (user_id);
+
+-- =============================================================================
+-- ADVANCED FEATURES — Friends, Matchmaking, Communities
+-- =============================================================================
+
+-- 10. friends — Friend system with status
+CREATE TABLE IF NOT EXISTS public.friends (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  requester_id UUID       NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  addressee_id UUID       NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  status      TEXT        NOT NULL DEFAULT 'pending'
+                            CHECK (status IN ('pending','accepted','blocked')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (requester_id, addressee_id)
+);
+
+-- 11. online_status — Real-time user presence
+CREATE TABLE IF NOT EXISTS public.online_status (
+  user_id     UUID        PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+  is_online   BOOLEAN     NOT NULL DEFAULT FALSE,
+  last_seen   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  game_id     TEXT        CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
+  status_text TEXT        DEFAULT '' -- "In match", "Looking for game", etc.
+);
+
+-- 12. matchmaking_queue — Find opponents
+CREATE TABLE IF NOT EXISTS public.matchmaking_queue (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  game_id      TEXT        NOT NULL CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
+  match_type   TEXT        NOT NULL CHECK (match_type IN ('1v1','2v2','3v3','Squad')),
+  wager_points INTEGER     NOT NULL CHECK (wager_points >= 50 AND wager_points <= 10000),
+  status       TEXT        NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting','matched','cancelled')),
+  matched_with UUID        REFERENCES public.profiles(id),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  matched_at   TIMESTAMPTZ,
+  UNIQUE (user_id, status) -- One active queue entry per user
+);
+
+-- 13. communities — Gaming clans/groups
+CREATE TABLE IF NOT EXISTS public.communities (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name         TEXT        NOT NULL,
+  description  TEXT,
+  avatar_url   TEXT,
+  game_id      TEXT        CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
+  owner_id     UUID        NOT NULL REFERENCES public.profiles(id),
+  member_count INTEGER     NOT NULL DEFAULT 1,
+  max_members  INTEGER     NOT NULL DEFAULT 50,
+  is_public    BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 14. community_members — Membership tracking
+CREATE TABLE IF NOT EXISTS public.community_members (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  community_id  UUID        NOT NULL REFERENCES public.communities(id) ON DELETE CASCADE,
+  user_id       UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  role          TEXT        NOT NULL DEFAULT 'member' CHECK (role IN ('owner','admin','moderator','member')),
+  joined_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (community_id, user_id)
+);
+
+-- 15. message_reactions — Emoji reactions to chat
+CREATE TABLE IF NOT EXISTS public.message_reactions (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id  UUID        NOT NULL REFERENCES public.chat_messages(id) ON DELETE CASCADE,
+  user_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  reaction    TEXT        NOT NULL, -- emoji
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (message_id, user_id, reaction)
+);
+
+-- 16. typing_indicators — Show who's typing
+CREATE TABLE IF NOT EXISTS public.typing_indicators (
+  room_id     UUID        NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
+  user_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  started_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (room_id, user_id)
+);
+
+-- Enable RLS on new tables
+ALTER TABLE public.friends ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.online_status ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.matchmaking_queue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.communities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.message_reactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.typing_indicators ENABLE ROW LEVEL SECURITY;
+
+-- RLS: Friends
+CREATE POLICY "friends_select_own" ON public.friends
+  FOR SELECT TO authenticated
+  USING (requester_id = auth.uid() OR addressee_id = auth.uid());
+
+CREATE POLICY "friends_insert_request" ON public.friends
+  FOR INSERT TO authenticated
+  WITH CHECK (requester_id = auth.uid());
+
+CREATE POLICY "friends_update_participants" ON public.friends
+  FOR UPDATE TO authenticated
+  USING (requester_id = auth.uid() OR addressee_id = auth.uid());
+
+-- RLS: Online Status
+CREATE POLICY "online_status_select_all" ON public.online_status
+  FOR SELECT TO authenticated USING (TRUE);
+
+CREATE POLICY "online_status_update_own" ON public.online_status
+  FOR UPDATE TO authenticated USING (user_id = auth.uid());
+
+-- RLS: Matchmaking Queue
+CREATE POLICY "matchmaking_select_own" ON public.matchmaking_queue
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR matched_with = auth.uid());
+
+CREATE POLICY "matchmaking_insert_own" ON public.matchmaking_queue
+  FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "matchmaking_update_own" ON public.matchmaking_queue
+  FOR UPDATE TO authenticated
+  USING (user_id = auth.uid());
+
+-- RLS: Communities
+CREATE POLICY "communities_select_public" ON public.communities
+  FOR SELECT TO authenticated
+  USING (is_public = TRUE OR EXISTS (
+    SELECT 1 FROM public.community_members WHERE community_id = id AND user_id = auth.uid()
+  ));
+
+CREATE POLICY "communities_insert_any" ON public.communities
+  FOR INSERT TO authenticated WITH CHECK (TRUE);
+
+-- RLS: Community Members
+CREATE POLICY "community_members_select_all" ON public.community_members
+  FOR SELECT TO authenticated USING (TRUE);
+
+CREATE POLICY "community_members_insert_own" ON public.community_members
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_friends_requester ON public.friends (requester_id);
+CREATE INDEX IF NOT EXISTS idx_friends_addressee ON public.friends (addressee_id);
+CREATE INDEX IF NOT EXISTS idx_friends_status ON public.friends (status);
+CREATE INDEX IF NOT EXISTS idx_matchmaking_queue_user ON public.matchmaking_queue (user_id);
+CREATE INDEX IF NOT EXISTS idx_matchmaking_queue_status ON public.matchmaking_queue (status);
+CREATE INDEX IF NOT EXISTS idx_matchmaking_queue_game ON public.matchmaking_queue (game_id, match_type, wager_points);
+CREATE INDEX IF NOT EXISTS idx_communities_game ON public.communities (game_id);
+CREATE INDEX IF NOT EXISTS idx_community_members_user ON public.community_members (user_id);
+CREATE INDEX IF NOT EXISTS idx_message_reactions_message ON public.message_reactions (message_id);
+
