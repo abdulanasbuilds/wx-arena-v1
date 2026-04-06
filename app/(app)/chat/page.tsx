@@ -117,38 +117,38 @@ interface ChatPanelProps {
 
 function ChatPanel({ room, currentUserId, onBack }: ChatPanelProps) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    MOCK_MESSAGES[room.id] ?? [],
-  );
   const bottomRef = useRef<HTMLDivElement>(null);
+  
+  const {
+    messages,
+    isLoading: messagesLoading,
+    sendMessage,
+    typingUsers,
+    setTyping,
+  } = useRealtimeChat({
+    roomId: room.id,
+    userId: currentUserId,
+  });
 
-  useEffect(() => {
-    setMessages(MOCK_MESSAGES[room.id] ?? []);
-    setInput("");
-  }, [room.id]);
-
+  // Scroll to bottom when messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-    const newMsg: ChatMessage = {
-      id: `new-${Date.now()}`,
-      room_id: room.id,
-      user_id: currentUserId,
-      content: trimmed,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, newMsg]);
+    await sendMessage(trimmed);
     setInput("");
+    setTyping(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    } else {
+      setTyping(true);
     }
   };
 
@@ -190,15 +190,37 @@ function ChatPanel({ room, currentUserId, onBack }: ChatPanelProps) {
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isOwn={msg.user_id === currentUserId}
-          />
-        ))}
+        {messagesLoading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size="md" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="text-center py-8 text-[#64748b]">
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isOwn={msg.user_id === currentUserId}
+            />
+          ))
+        )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Typing indicator */}
+      {typingUsers.length > 0 && (
+        <div className="px-4 py-2 text-xs text-[#64748b] flex items-center gap-2">
+          <span className="flex gap-0.5">
+            <span className="w-1.5 h-1.5 bg-[#a855f7] rounded-full animate-bounce" />
+            <span className="w-1.5 h-1.5 bg-[#a855f7] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-1.5 h-1.5 bg-[#a855f7] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+          </span>
+          Someone is typing...
+        </div>
+      )}
 
       {/* Input area */}
       <div className="shrink-0 px-4 py-3 border-t border-[#2a2a4e] bg-[#1a1a2e]">
@@ -239,18 +261,39 @@ function ChatPanel({ room, currentUserId, onBack }: ChatPanelProps) {
 export default function ChatPage() {
   const [authChecked, setAuthChecked] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState("current-user-id");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showList, setShowList] = useState(true);
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setCurrentUserId(user.id);
+      if (user) {
+        setCurrentUserId(user.id);
+        // Fetch user's chat rooms
+        supabase
+          .from("chat_room_members")
+          .select(`room_id, chat_rooms(id, name, type, game_id)`)
+          .eq("user_id", user.id)
+          .then(({ data }) => {
+            if (data) {
+              const formattedRooms = data.map((r: any) => ({
+                id: r.chat_rooms.id,
+                name: r.chat_rooms.name,
+                type: r.chat_rooms.type,
+                game_id: r.chat_rooms.game_id,
+                participants: [],
+                unread_count: 0,
+              }));
+              setRooms(formattedRooms);
+            }
+          });
+      }
       setAuthChecked(true);
     });
   }, []);
 
-  const selectedRoom = MOCK_ROOMS.find((r) => r.id === selectedRoomId) ?? null;
+  const selectedRoom = rooms.find((r) => r.id === selectedRoomId) ?? null;
 
   const handleSelectRoom = (roomId: string) => {
     setSelectedRoomId(roomId);
@@ -307,13 +350,20 @@ export default function ChatPage() {
 
           {/* Room list */}
           <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 min-h-0">
-            {MOCK_ROOMS.map((room) => (
-              <ChatCard
-                key={room.id}
-                room={room}
-                onClick={() => handleSelectRoom(room.id)}
-              />
-            ))}
+            {rooms.length === 0 ? (
+              <div className="text-center py-8 text-[#64748b]">
+                <p className="text-sm">No conversations yet</p>
+                <p className="text-xs mt-1">Join a community to start chatting</p>
+              </div>
+            ) : (
+              rooms.map((room) => (
+                <ChatCard
+                  key={room.id}
+                  room={room}
+                  onClick={() => handleSelectRoom(room.id)}
+                />
+              ))
+            )}
           </div>
 
           {/* Footer hint */}
@@ -342,7 +392,7 @@ export default function ChatPage() {
             !showList && "flex flex-col",
           )}
         >
-          {selectedRoom ? (
+          {selectedRoom && currentUserId ? (
             <ChatPanel
               room={selectedRoom}
               currentUserId={currentUserId}
