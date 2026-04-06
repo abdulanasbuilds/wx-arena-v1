@@ -41,7 +41,7 @@ const MOCK_PROFILE: UserProfile = {
 const MOCK_MATCHES: Match[] = [
   {
     id: "m1",
-    game_id: "efootball",
+    game_id: "fortnite",
     match_type: "1v1",
     status: "completed",
     wager_points: 200,
@@ -55,7 +55,7 @@ const MOCK_MATCHES: Match[] = [
   },
   {
     id: "m2",
-    game_id: "free-fire",
+    game_id: "pubg",
     match_type: "Squad",
     status: "completed",
     wager_points: 500,
@@ -69,7 +69,7 @@ const MOCK_MATCHES: Match[] = [
   },
   {
     id: "m3",
-    game_id: "pubg-mobile",
+    game_id: "apex-legends",
     match_type: "1v1",
     status: "in_progress",
     wager_points: 150,
@@ -87,20 +87,20 @@ const MOCK_LINKED_GAMES: LinkedGame[] = [
   {
     id: "lg1",
     user_id: "current-user-id",
-    game_id: "efootball",
+    game_id: "fortnite",
     platform: "Android",
-    external_id: "EF-78923",
-    display_name: "GhostSniper_EF",
+    external_id: "FN-78923",
+    display_name: "GhostSniper_FN",
     is_verified: true,
     created_at: "2024-01-20T00:00:00Z",
   },
   {
     id: "lg2",
     user_id: "current-user-id",
-    game_id: "free-fire",
+    game_id: "pubg",
     platform: "iOS",
-    external_id: "FF-445512",
-    display_name: "Gh0stFF",
+    external_id: "PB-445512",
+    display_name: "Gh0stPB",
     is_verified: false,
     created_at: "2024-02-03T00:00:00Z",
   },

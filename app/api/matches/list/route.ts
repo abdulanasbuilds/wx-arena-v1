@@ -16,9 +16,9 @@ const querySchema = z.object({
       "efootball",
       "dls",
       "free-fire",
-      "pubg-mobile",
-      "cod-mobile",
-      "fc25",
+      "league-of-legends",
+      "cod",
+      "fortnite",
     ])
     .optional(),
   limit: z

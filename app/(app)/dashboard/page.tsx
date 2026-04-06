@@ -18,184 +18,52 @@ import {
   Gamepad2,
 } from "lucide-react";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Types for Supabase data ──────────────────────────────────────────────────
 
-const mockProfile: UserProfile = {
-  id: "user-001",
-  username: "PhantomX",
-  avatar_url: null,
-  bio: "Top-ranked eFootball player. Here to dominate.",
-  points: 14_850,
-  total_matches: 312,
-  wins: 219,
-  losses: 93,
-  win_rate: 70.2,
-  rank: 7,
-  streak: 5,
-  is_verified: true,
-  is_pro: true,
-  created_at: "2024-01-15T10:00:00Z",
-};
-
-const mockMatches: Match[] = [
-  {
-    id: "match-001",
-    game_id: "efootball",
-    match_type: "1v1",
-    status: "in_progress",
-    wager_points: 500,
-    player_1_id: "user-001",
-    player_2_id: "user-002",
-    winner_id: null,
-    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    completed_at: null,
-    player_1: mockProfile,
-    player_2: {
-      id: "user-002",
-      username: "NightStalker",
-      avatar_url: null,
-      bio: null,
-      points: 11_200,
-      total_matches: 198,
-      wins: 118,
-      losses: 80,
-      win_rate: 59.6,
-      rank: 14,
-      streak: 2,
-      is_verified: false,
-      is_pro: false,
-      created_at: "2024-03-10T08:30:00Z",
-    },
-  },
-  {
-    id: "match-002",
-    game_id: "free-fire",
-    match_type: "Squad",
-    status: "completed",
-    wager_points: 1_000,
-    player_1_id: "user-003",
-    player_2_id: "user-001",
-    winner_id: "user-001",
-    created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    completed_at: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString(),
-    player_1: {
-      id: "user-003",
-      username: "BlazeMaster",
-      avatar_url: null,
-      bio: null,
-      points: 9_400,
-      total_matches: 155,
-      wins: 82,
-      losses: 73,
-      win_rate: 52.9,
-      rank: 23,
-      streak: 0,
-      is_verified: false,
-      is_pro: false,
-      created_at: "2024-02-20T14:00:00Z",
-    },
-    player_2: mockProfile,
-  },
-  {
-    id: "match-003",
-    game_id: "fc25",
-    match_type: "1v1",
-    status: "pending",
-    wager_points: 250,
-    player_1_id: "user-001",
-    player_2_id: "user-004",
-    winner_id: null,
-    created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    completed_at: null,
-    player_1: mockProfile,
-    player_2: {
-      id: "user-004",
-      username: "StormRider",
-      avatar_url: null,
-      bio: null,
-      points: 13_100,
-      total_matches: 274,
-      wins: 170,
-      losses: 104,
-      win_rate: 62.0,
-      rank: 9,
-      streak: 3,
-      is_verified: true,
-      is_pro: true,
-      created_at: "2024-01-28T09:00:00Z",
-    },
-  },
-];
-
-const mockTournaments: Tournament[] = [
-  {
-    id: "tourney-001",
-    title: "Weekend Warrior Cup",
-    game_id: "efootball",
-    status: "open",
-    entry_fee: 200,
-    prize_pool: 10_000,
-    max_participants: 64,
-    current_participants: 47,
-    start_time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "tourney-002",
-    title: "Free Fire Royale Series",
-    game_id: "free-fire",
-    status: "in_progress",
-    entry_fee: 500,
-    prize_pool: 25_000,
-    max_participants: 32,
-    current_participants: 32,
-    start_time: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-interface MockFeedItem {
+interface SupabaseProfile {
   id: string;
-  type: "match_result" | "tournament_win" | "new_player" | "achievement";
   username: string;
-  description: string;
-  timestamp: string;
-  points?: number;
+  avatar_url: string | null;
+  bio: string | null;
+  points: number;
+  total_matches: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  rank: number;
+  streak: number;
+  is_verified: boolean;
+  is_pro: boolean;
+  created_at: string;
 }
 
-const mockFeed: MockFeedItem[] = [
-  {
-    id: "feed-001",
-    type: "match_result",
-    username: "PhantomX",
-    description: "won a 1v1 match against BlazeMaster in eFootball",
-    timestamp: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString(),
-    points: 1_000,
-  },
-  {
-    id: "feed-002",
-    type: "tournament_win",
-    username: "CyberKnight",
-    description: "claimed 1st place in the PUBG Mobile Grand Prix",
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    points: 8_500,
-  },
-  {
-    id: "feed-003",
-    type: "new_player",
-    username: "VortexSniper",
-    description: "joined WX ARENA and is ready to compete",
-    timestamp: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "feed-004",
-    type: "achievement",
-    username: "StormRider",
-    description: "unlocked the 'On Fire' badge with a 10-win streak",
-    timestamp: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(),
-    points: 500,
-  },
-];
+interface SupabaseMatch {
+  id: string;
+  game_id: string;
+  match_type: string;
+  status: string;
+  wager_points: number;
+  player_1_id: string;
+  player_2_id: string | null;
+  winner_id: string | null;
+  created_at: string;
+  completed_at: string | null;
+  player_1: SupabaseProfile;
+  player_2: SupabaseProfile | null;
+}
+
+interface SupabaseTournament {
+  id: string;
+  title: string;
+  game_id: string;
+  status: string;
+  entry_fee: number;
+  prize_pool: number;
+  max_participants: number;
+  current_participants: number;
+  start_time: string;
+  created_at: string;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -206,6 +74,58 @@ function getTodayLabel(): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function mapSupabaseProfile(profile: SupabaseProfile | null): UserProfile | null {
+  if (!profile) return null;
+  return {
+    id: profile.id,
+    username: profile.username,
+    avatar_url: profile.avatar_url,
+    bio: profile.bio,
+    points: profile.points,
+    total_matches: profile.total_matches,
+    wins: profile.wins,
+    losses: profile.losses,
+    win_rate: profile.win_rate,
+    rank: profile.rank,
+    streak: profile.streak,
+    is_verified: profile.is_verified,
+    is_pro: profile.is_pro,
+    created_at: profile.created_at,
+  };
+}
+
+function mapSupabaseMatch(match: SupabaseMatch): Match {
+  return {
+    id: match.id,
+    game_id: match.game_id as Match["game_id"],
+    match_type: match.match_type as Match["match_type"],
+    status: match.status as Match["status"],
+    wager_points: match.wager_points,
+    player_1_id: match.player_1_id,
+    player_2_id: match.player_2_id,
+    winner_id: match.winner_id,
+    created_at: match.created_at,
+    completed_at: match.completed_at,
+    player_1: mapSupabaseProfile(match.player_1)!,
+    player_2: mapSupabaseProfile(match.player_2),
+  };
+}
+
+function mapSupabaseTournament(tournament: SupabaseTournament): Tournament {
+  return {
+    id: tournament.id,
+    title: tournament.title,
+    game_id: tournament.game_id as Tournament["game_id"],
+    status: tournament.status as Tournament["status"],
+    entry_fee: tournament.entry_fee,
+    prize_pool: tournament.prize_pool,
+    max_participants: tournament.max_participants,
+    current_participants: tournament.current_participants,
+    start_time: tournament.start_time,
+    created_at: tournament.created_at,
+  };
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -220,8 +140,79 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Use mock profile but override the id to match the real auth user
-  const profile: UserProfile = { ...mockProfile, id: user.id };
+  // Fetch user profile
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const profile: UserProfile = profileError || !profileData
+    ? {
+        id: user.id,
+        username: user.email?.split("@")[0] || "Player",
+        avatar_url: null,
+        bio: null,
+        points: 1000,
+        total_matches: 0,
+        wins: 0,
+        losses: 0,
+        win_rate: 0,
+        rank: 9999,
+        streak: 0,
+        is_verified: false,
+        is_pro: false,
+        created_at: new Date().toISOString(),
+      }
+    : mapSupabaseProfile(profileData as SupabaseProfile)!;
+
+  // Fetch recent matches (where user is player_1 or player_2)
+  const { data: matchesData, error: matchesError } = await supabase
+    .from("matches")
+    .select(`
+      *,
+      player_1:profiles!matches_player_1_id_fkey(*),
+      player_2:profiles!matches_player_2_id_fkey(*)
+    `)
+    .or(`player_1_id.eq.${user.id},player_2_id.eq.${user.id}`)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const matches: Match[] = matchesError || !matchesData
+    ? []
+    : (matchesData as SupabaseMatch[]).map(mapSupabaseMatch);
+
+  // Fetch active tournaments
+  const { data: tournamentsData, error: tournamentsError } = await supabase
+    .from("tournaments")
+    .select("*")
+    .in("status", ["open", "in_progress"])
+    .order("start_time", { ascending: true })
+    .limit(5);
+
+  const tournaments: Tournament[] = tournamentsError || !tournamentsData
+    ? []
+    : (tournamentsData as SupabaseTournament[]).map(mapSupabaseTournament);
+
+  // Fetch recent wallet transactions for activity feed
+  const { data: transactionsData, error: transactionsError } = await supabase
+    .from("wallet_transactions")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  // Build activity feed from transactions
+  const activityFeed = transactionsError || !transactionsData
+    ? []
+    : transactionsData.map((tx: { id: string; type: string; points: number; description: string; created_at: string }) => ({
+        id: tx.id,
+        type: tx.type === "win" ? "match_result" : tx.type === "earn" ? "achievement" : "new_player",
+        username: profile.username,
+        description: tx.description,
+        timestamp: tx.created_at,
+        points: tx.points > 0 ? tx.points : undefined,
+      }));
 
   const winRateTrend =
     profile.win_rate >= 50
@@ -295,13 +286,24 @@ export default async function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {mockMatches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                currentUserId={profile.id}
-              />
-            ))}
+            {matches.length > 0 ? (
+              matches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  currentUserId={profile.id}
+                />
+              ))
+            ) : (
+              <div className="bg-[#0d0d14] border border-[#1a1a2e] rounded-xl p-6 text-center">
+                <p className="text-[#64748b] text-sm">No matches yet</p>
+                <Link href="/matches">
+                  <Button variant="primary" size="sm" className="mt-3">
+                    Find a Match
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
@@ -321,9 +323,20 @@ export default async function DashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {mockTournaments.map((tournament) => (
-              <TournamentCard key={tournament.id} tournament={tournament} />
-            ))}
+            {tournaments.length > 0 ? (
+              tournaments.map((tournament) => (
+                <TournamentCard key={tournament.id} tournament={tournament} />
+              ))
+            ) : (
+              <div className="bg-[#0d0d14] border border-[#1a1a2e] rounded-xl p-6 text-center">
+                <p className="text-[#64748b] text-sm">No active tournaments</p>
+                <Link href="/tournaments">
+                  <Button variant="outline" size="sm" className="mt-3">
+                    Browse Tournaments
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       </div>
@@ -338,16 +351,22 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-2">
-          {mockFeed.map((item) => (
-            <FeedItem
-              key={item.id}
-              type={item.type}
-              username={item.username}
-              description={item.description}
-              timestamp={item.timestamp}
-              points={item.points}
-            />
-          ))}
+          {activityFeed.length > 0 ? (
+            activityFeed.map((item) => (
+              <FeedItem
+                key={item.id}
+                type={item.type as any}
+                username={item.username}
+                description={item.description}
+                timestamp={item.timestamp}
+                points={item.points}
+              />
+            ))
+          ) : (
+            <div className="bg-[#0d0d14] border border-[#1a1a2e] rounded-xl p-4 text-center">
+              <p className="text-[#64748b] text-sm">No recent activity</p>
+            </div>
+          )}
         </div>
       </section>
 

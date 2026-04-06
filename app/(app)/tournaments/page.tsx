@@ -51,7 +51,7 @@ const MOCK_TOURNAMENTS: Tournament[] = [
   {
     id: "t-003",
     title: "PUBG Mobile Legends Invitational",
-    game_id: "pubg-mobile",
+    game_id: "league-of-legends",
     status: "in_progress",
     entry_fee: 150,
     prize_pool: 8000,
@@ -63,7 +63,7 @@ const MOCK_TOURNAMENTS: Tournament[] = [
   {
     id: "t-004",
     title: "COD Mobile Squad Showdown",
-    game_id: "cod-mobile",
+    game_id: "cod",
     status: "in_progress",
     entry_fee: 250,
     prize_pool: 15000,
@@ -75,7 +75,7 @@ const MOCK_TOURNAMENTS: Tournament[] = [
   {
     id: "t-005",
     title: "FC 25 Ultimate Team Championship",
-    game_id: "fc25",
+    game_id: "fortnite",
     status: "completed",
     entry_fee: 300,
     prize_pool: 20000,

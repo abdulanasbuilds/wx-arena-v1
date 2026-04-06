@@ -37,10 +37,12 @@ const GAME_IDS = [
   "efootball",
   "dls",
   "free-fire",
-  "pubg-mobile",
-  "cod-mobile",
-  "fc25",
+  "league-of-legends",
+  "cod",
+  "fortnite",
 ] as const;
+
+const gameIdValues = GAME_IDS;
 
 const PLATFORMS = [
   "Android",

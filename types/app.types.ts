@@ -1,4 +1,4 @@
-export type GameId = "efootball" | "dls" | "free-fire" | "pubg-mobile" | "cod-mobile" | "fc25";
+export type GameId = "efootball" | "dls" | "free-fire" | "league-of-legends" | "cod" | "fortnite";
 export type MatchType = "1v1" | "2v2" | "3v3" | "Squad";
 export type MatchStatus = "pending" | "in_progress" | "completed" | "disputed" | "cancelled";
 export type TournamentStatus = "open" | "in_progress" | "completed" | "cancelled";

@@ -8,206 +8,81 @@ import { MatchCard } from "@/components/features/MatchCard";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/utils/cn";
-import type { Match, MatchStatus } from "@/types/app.types";
+import type { Match, MatchStatus, UserProfile } from "@/types/app.types";
 import { Swords, Plus, Inbox } from "lucide-react";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Types for Supabase data ──────────────────────────────────────────────────
 
-const MOCK_USER_ID = "user-001";
+interface SupabaseProfile {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  bio: string | null;
+  points: number;
+  total_matches: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  rank: number;
+  streak: number;
+  is_verified: boolean;
+  is_pro: boolean;
+  created_at: string;
+}
 
-const mockPlayerOne = {
-  id: "user-001",
-  username: "PhantomX",
-  avatar_url: null,
-  bio: null,
-  points: 14_850,
-  total_matches: 312,
-  wins: 219,
-  losses: 93,
-  win_rate: 70.2,
-  rank: 7,
-  streak: 5,
-  is_verified: true,
-  is_pro: true,
-  created_at: "2024-01-15T10:00:00Z",
-} as const;
+interface SupabaseMatch {
+  id: string;
+  game_id: string;
+  match_type: string;
+  status: string;
+  wager_points: number;
+  player_1_id: string;
+  player_2_id: string | null;
+  winner_id: string | null;
+  created_at: string;
+  completed_at: string | null;
+  player_1: SupabaseProfile;
+  player_2: SupabaseProfile | null;
+}
 
-const mockMatches: Match[] = [
-  {
-    id: "match-001",
-    game_id: "efootball",
-    match_type: "1v1",
-    status: "in_progress",
-    wager_points: 500,
-    player_1_id: "user-001",
-    player_2_id: "user-002",
-    winner_id: null,
-    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    completed_at: null,
-    player_1: { ...mockPlayerOne },
-    player_2: {
-      id: "user-002",
-      username: "NightStalker",
-      avatar_url: null,
-      bio: null,
-      points: 11_200,
-      total_matches: 198,
-      wins: 118,
-      losses: 80,
-      win_rate: 59.6,
-      rank: 14,
-      streak: 2,
-      is_verified: false,
-      is_pro: false,
-      created_at: "2024-03-10T08:30:00Z",
-    },
-  },
-  {
-    id: "match-002",
-    game_id: "free-fire",
-    match_type: "Squad",
-    status: "completed",
-    wager_points: 1_000,
-    player_1_id: "user-003",
-    player_2_id: "user-001",
-    winner_id: "user-001",
-    created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    completed_at: new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString(),
-    player_1: {
-      id: "user-003",
-      username: "BlazeMaster",
-      avatar_url: null,
-      bio: null,
-      points: 9_400,
-      total_matches: 155,
-      wins: 82,
-      losses: 73,
-      win_rate: 52.9,
-      rank: 23,
-      streak: 0,
-      is_verified: false,
-      is_pro: false,
-      created_at: "2024-02-20T14:00:00Z",
-    },
-    player_2: { ...mockPlayerOne },
-  },
-  {
-    id: "match-003",
-    game_id: "fc25",
-    match_type: "1v1",
-    status: "pending",
-    wager_points: 250,
-    player_1_id: "user-001",
-    player_2_id: "user-004",
-    winner_id: null,
-    created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    completed_at: null,
-    player_1: { ...mockPlayerOne },
-    player_2: {
-      id: "user-004",
-      username: "StormRider",
-      avatar_url: null,
-      bio: null,
-      points: 13_100,
-      total_matches: 274,
-      wins: 170,
-      losses: 104,
-      win_rate: 62.0,
-      rank: 9,
-      streak: 3,
-      is_verified: true,
-      is_pro: true,
-      created_at: "2024-01-28T09:00:00Z",
-    },
-  },
-  {
-    id: "match-004",
-    game_id: "pubg-mobile",
-    match_type: "Squad",
-    status: "completed",
-    wager_points: 2_000,
-    player_1_id: "user-005",
-    player_2_id: "user-001",
-    winner_id: "user-005",
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    completed_at: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-    player_1: {
-      id: "user-005",
-      username: "CyberKnight",
-      avatar_url: null,
-      bio: null,
-      points: 18_300,
-      total_matches: 420,
-      wins: 290,
-      losses: 130,
-      win_rate: 69.0,
-      rank: 4,
-      streak: 8,
-      is_verified: true,
-      is_pro: true,
-      created_at: "2023-12-01T06:00:00Z",
-    },
-    player_2: { ...mockPlayerOne },
-  },
-  {
-    id: "match-005",
-    game_id: "dls",
-    match_type: "1v1",
-    status: "disputed",
-    wager_points: 750,
-    player_1_id: "user-001",
-    player_2_id: "user-006",
-    winner_id: null,
-    created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    completed_at: null,
-    player_1: { ...mockPlayerOne },
-    player_2: {
-      id: "user-006",
-      username: "VortexSniper",
-      avatar_url: null,
-      bio: null,
-      points: 7_800,
-      total_matches: 121,
-      wins: 55,
-      losses: 66,
-      win_rate: 45.5,
-      rank: 38,
-      streak: 0,
-      is_verified: false,
-      is_pro: false,
-      created_at: "2024-04-05T11:00:00Z",
-    },
-  },
-  {
-    id: "match-006",
-    game_id: "cod-mobile",
-    match_type: "1v1",
-    status: "pending",
-    wager_points: 300,
-    player_1_id: "user-007",
-    player_2_id: "user-001",
-    winner_id: null,
-    created_at: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
-    completed_at: null,
-    player_1: {
-      id: "user-007",
-      username: "IronFang",
-      avatar_url: null,
-      bio: null,
-      points: 10_500,
-      total_matches: 189,
-      wins: 101,
-      losses: 88,
-      win_rate: 53.4,
-      rank: 19,
-      streak: 1,
-      is_verified: false,
-      is_pro: false,
-      created_at: "2024-02-14T16:00:00Z",
-    },
-    player_2: { ...mockPlayerOne },
-  },
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function mapSupabaseProfile(profile: SupabaseProfile | null): UserProfile | null {
+  if (!profile) return null;
+  return {
+    id: profile.id,
+    username: profile.username,
+    avatar_url: profile.avatar_url,
+    bio: profile.bio,
+    points: profile.points,
+    total_matches: profile.total_matches,
+    wins: profile.wins,
+    losses: profile.losses,
+    win_rate: profile.win_rate,
+    rank: profile.rank,
+    streak: profile.streak,
+    is_verified: profile.is_verified,
+    is_pro: profile.is_pro,
+    created_at: profile.created_at,
+  };
+}
+
+function mapSupabaseMatch(match: SupabaseMatch): Match {
+  return {
+    id: match.id,
+    game_id: match.game_id as Match["game_id"],
+    match_type: match.match_type as Match["match_type"],
+    status: match.status as Match["status"],
+    wager_points: match.wager_points,
+    player_1_id: match.player_1_id,
+    player_2_id: match.player_2_id,
+    winner_id: match.winner_id,
+    created_at: match.created_at,
+    completed_at: match.completed_at,
+    player_1: mapSupabaseProfile(match.player_1)!,
+    player_2: mapSupabaseProfile(match.player_2),
+  };
+}
 
 // ─── Filter types ─────────────────────────────────────────────────────────────
 
@@ -378,20 +253,42 @@ export default function MatchesPage() {
   const router = useRouter();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    
+    // Check auth and fetch matches
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         router.replace("/login");
-      } else {
-        setUserId(user.id);
-        setIsAuthChecking(false);
+        return;
       }
+      
+      setUserId(user.id);
+      setIsAuthChecking(false);
+      
+      // Fetch real matches from Supabase
+      const { data: matchesData, error } = await supabase
+        .from("matches")
+        .select(`
+          *,
+          player_1:profiles!matches_player_1_id_fkey(*),
+          player_2:profiles!matches_player_2_id_fkey(*)
+        `)
+        .or(`player_1_id.eq.${user.id},player_2_id.eq.${user.id}`)
+        .order("created_at", { ascending: false });
+      
+      if (!error && matchesData) {
+        setMatches((matchesData as SupabaseMatch[]).map(mapSupabaseMatch));
+      }
+      
+      setIsLoading(false);
     });
   }, [router]);
 
-  if (isAuthChecking) {
+  if (isAuthChecking || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner size="lg" />
@@ -431,8 +328,8 @@ export default function MatchesPage() {
 
       {/* ── Filtered match grid ── */}
       <MatchesClient
-        matches={mockMatches}
-        currentUserId={userId ?? MOCK_USER_ID}
+        matches={matches}
+        currentUserId={userId ?? ""}
       />
     </div>
   );

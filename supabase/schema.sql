@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.matches (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   game_id      TEXT        NOT NULL
-                            CHECK (game_id IN ('efootball','dls','free-fire','pubg-mobile','cod-mobile','fc25')),
+                            CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
   match_type   TEXT        NOT NULL
                             CHECK (match_type IN ('1v1','2v2','3v3','Squad')),
   status       TEXT        NOT NULL DEFAULT 'pending'
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.tournaments (
   id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   title                TEXT        NOT NULL,
   game_id              TEXT        NOT NULL
-                                    CHECK (game_id IN ('efootball','dls','free-fire','pubg-mobile','cod-mobile','fc25')),
+                                    CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
   status               TEXT        NOT NULL DEFAULT 'open'
                                     CHECK (status IN ('open','in_progress','completed','cancelled')),
   entry_fee            INTEGER     NOT NULL DEFAULT 0,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS public.linked_games (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   game_id      TEXT        NOT NULL
-                            CHECK (game_id IN ('efootball','dls','free-fire','pubg-mobile','cod-mobile','fc25')),
+                            CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
   platform     TEXT        NOT NULL
                             CHECK (platform IN ('Android','iOS','PlayStation','Xbox','PC','Steam')),
   external_id  TEXT        NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS public.chat_rooms (
   name       TEXT        NOT NULL,
   type       TEXT        NOT NULL
                           CHECK (type IN ('direct','group','game_room')),
-  game_id    TEXT        CHECK (game_id IN ('efootball','dls','free-fire','pubg-mobile','cod-mobile','fc25')),
+  game_id    TEXT        CHECK (game_id IN ('efootball','dls','free-fire','league-of-legends','cod','fortnite')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

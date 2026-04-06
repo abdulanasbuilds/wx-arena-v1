@@ -40,14 +40,14 @@ const tournamentStatusValues: [TournamentStatus, ...TournamentStatus[]] = [
   "cancelled",
 ];
 
-const gameIdValues: [GameId, ...GameId[]] = [
+const gameIdValues = [
   "efootball",
   "dls",
   "free-fire",
-  "pubg-mobile",
-  "cod-mobile",
-  "fc25",
-];
+  "league-of-legends",
+  "cod",
+  "fortnite",
+] as const;
 
 const listQuerySchema = z.object({
   status: z.enum(tournamentStatusValues).optional(),

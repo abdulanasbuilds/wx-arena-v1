@@ -361,9 +361,9 @@ const GAME_TABS: { id: GameTab; label: string; emoji: string }[] = [
   { id: "efootball", label: "eFootball", emoji: "⚽" },
   { id: "dls", label: "DLS", emoji: "🏆" },
   { id: "free-fire", label: "Free Fire", emoji: "🔥" },
-  { id: "pubg-mobile", label: "PUBG", emoji: "🎯" },
-  { id: "cod-mobile", label: "COD Mobile", emoji: "💀" },
-  { id: "fc25", label: "FC 25", emoji: "⚡" },
+  { id: "league-of-legends", label: "League of Legends", emoji: "⚔️" },
+  { id: "cod", label: "Call of Duty", emoji: "💀" },
+  { id: "fortnite", label: "Fortnite", emoji: "🎮" },
 ];
 
 export function LeaderboardTabs({

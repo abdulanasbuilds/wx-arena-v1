@@ -13,9 +13,9 @@ const queueSchema = z.object({
     "efootball",
     "dls",
     "free-fire",
-    "pubg-mobile",
-    "cod-mobile",
-    "fc25",
+    "league-of-legends",
+    "cod",
+    "fortnite",
   ]),
   match_type: z.enum(["1v1", "2v2", "3v3", "Squad"]),
   wager_points: z

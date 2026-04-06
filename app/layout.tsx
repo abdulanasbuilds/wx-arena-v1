@@ -79,10 +79,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} dark`}>
       <body className="bg-[#050508] text-[#f1f5f9] font-[family-name:var(--font-dm-sans)] antialiased">
-        <Navbar />
-        <main className="min-h-[calc(100vh-4rem)] pb-20 md:pb-8">{children}</main>
-        <MobileNav />
-        <Footer />
+        <PWAProvider>
+          <Navbar />
+          <main className="min-h-[calc(100vh-4rem)] pb-20 md:pb-8">{children}</main>
+          <MobileNav />
+          <Footer />
+        </PWAProvider>
       </body>
     </html>
   );
