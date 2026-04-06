@@ -15,10 +15,11 @@ interface NavLink {
 const NAV_LINKS: NavLink[] = [
   { label: "Home", href: "/" },
   { label: "Matches", href: "/matches" },
-  { label: "Leaderboard", href: "/leaderboard" },
   { label: "Tournaments", href: "/tournaments" },
+  { label: "Leaderboard", href: "/leaderboard" },
+  { label: "Friends", href: "/friends" },
+  { label: "Communities", href: "/communities" },
   { label: "Chat", href: "/chat" },
-  { label: "Profile", href: "/profile/me" },
 ];
 
 export function Navbar() {
