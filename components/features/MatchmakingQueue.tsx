@@ -1,54 +1,199 @@
 "use client";
 
-import { useState } from "react";
-import { Swords, Users, Clock, Trophy, Zap, X, Gamepad2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Swords, Users, Zap, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { GAMES } from "@/lib/utils/constants";
+import { createClient } from "@/lib/supabase/client";
 import type { GameId } from "@/types/app.types";
+
+const EDGE_FUNCTION_URL = process.env.NEXT_PUBLIC_SUPABASE_URL + '/functions/v1/matchmaking';
 
 interface MatchmakingQueueProps {
   userId: string;
-  onMatchFound?: (opponent: any) => void;
+  userRank?: number;
+  onMatchFound?: (match: {
+    matchId: string;
+    opponent: {
+      id: string;
+      username: string;
+      rank: number;
+      win_rate: number;
+    };
+    gameId: GameId;
+    wagerPoints: number;
+  }) => void;
 }
 
-export function MatchmakingQueue({ userId, onMatchFound }: MatchmakingQueueProps) {
+export function MatchmakingQueue({ userId, userRank = 1, onMatchFound }: MatchmakingQueueProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null);
   const [matchType, setMatchType] = useState<"1v1" | "2v2" | "3v3" | "Squad">("1v1");
   const [wagerPoints, setWagerPoints] = useState(100);
   const [queuePosition, setQueuePosition] = useState(0);
   const [estimatedWait, setEstimatedWait] = useState(0);
+  const [queueId, setQueueId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const startQueue = () => {
-    if (!selectedGame) return;
-    setIsSearching(true);
-    setQueuePosition(1);
-    setEstimatedWait(30);
-    
-    // Simulate matchmaking
-    const interval = setInterval(() => {
-      setEstimatedWait((prev) => Math.max(0, prev - 1));
-    }, 1000);
+  const supabase = createClient();
 
-    // Auto-match after 5 seconds for demo
-    setTimeout(() => {
-      clearInterval(interval);
-      setIsSearching(false);
-      onMatchFound?.({
-        id: "opponent-" + Date.now(),
-        username: "ProPlayer_" + Math.floor(Math.random() * 1000),
-        rank: Math.floor(Math.random() * 50) + 1,
-        win_rate: 60 + Math.random() * 20,
+  // Calculate rank range for matching (±5 ranks)
+  const getRankRange = useCallback(() => {
+    const range = 5;
+    return {
+      min: Math.max(1, userRank - range),
+      max: userRank + range,
+    };
+  }, [userRank]);
+
+  // Join matchmaking queue via Edge Function
+  const startQueue = async () => {
+    if (!selectedGame) {
+      setError("Please select a game");
+      return;
+    }
+
+    try {
+      setError(null);
+      setIsSearching(true);
+      setQueuePosition(1);
+      setEstimatedWait(30);
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: 'join',
+          userId,
+          gameId: selectedGame,
+          matchType,
+          wagerPoints,
+          userRank,
+        }),
       });
-    }, 5000);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to join queue');
+      }
+
+      setQueueId(data.queueId);
+
+      // Try to find a match immediately
+      await findMatch(data.queueId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to join queue");
+      setIsSearching(false);
+    }
   };
 
-  const cancelQueue = () => {
+  // Find a matching opponent via Edge Function
+  const findMatch = async (currentQueueId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: 'find',
+          queueId: currentQueueId,
+          userId,
+          gameId: selectedGame,
+          matchType,
+          wagerPoints,
+          userRank,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to find match');
+      }
+
+      if (data.matched) {
+        setIsSearching(false);
+        onMatchFound?.({
+          matchId: data.matchId,
+          opponent: data.opponent,
+          gameId: selectedGame!,
+          wagerPoints,
+        });
+      }
+    } catch (err) {
+      console.error("Match finding error:", err);
+    }
+  };
+
+  // Cancel queue via Edge Function
+  const cancelQueue = async () => {
+    if (queueId) {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: 'cancel',
+          queueId,
+        }),
+      });
+    }
     setIsSearching(false);
     setQueuePosition(0);
     setEstimatedWait(0);
+    setQueueId(null);
   };
+
+  // Subscribe to queue updates
+  useEffect(() => {
+    if (!isSearching || !queueId) return;
+
+    const channel = supabase
+      .channel("matchmaking_updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "matchmaking_queue",
+          filter: `id=eq.${queueId}`,
+        },
+        (payload) => {
+          if (payload.new.status === "matched") {
+            // Match was found - handled by findMatch response
+          }
+        }
+      )
+      .subscribe();
+
+    // Periodic match finding while searching
+    const interval = setInterval(() => {
+      if (queueId) {
+        findMatch(queueId);
+      }
+      setEstimatedWait((prev) => Math.max(0, prev - 1));
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [isSearching, queueId]);
 
   if (isSearching) {
     return (
@@ -87,6 +232,12 @@ export function MatchmakingQueue({ userId, onMatchFound }: MatchmakingQueueProps
         </div>
       </div>
 
+      {error && (
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
       {/* Game Selection */}
       <div className="space-y-3">
         <label className="text-sm font-medium text-[#94a3b8]">Select Game</label>
@@ -112,19 +263,20 @@ export function MatchmakingQueue({ userId, onMatchFound }: MatchmakingQueueProps
       {/* Match Type */}
       <div className="space-y-3">
         <label className="text-sm font-medium text-[#94a3b8]">Match Type</label>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {["1v1", "2v2", "3v3", "Squad"].map((type) => (
             <button
               key={type}
               onClick={() => setMatchType(type as any)}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium border transition-all",
+                "flex items-center justify-center gap-2 p-3 rounded-xl border transition-all",
                 matchType === type
-                  ? "bg-[#a855f7] border-[#a855f7] text-white"
-                  : "bg-[#1a1a2e] border-[#2a2a4e] text-[#94a3b8] hover:border-[#a855f7]/40"
+                  ? "border-[#a855f7] bg-[#a855f7]/10 text-[#f1f5f9]"
+                  : "border-[#2a2a4e] text-[#94a3b8] hover:border-[#4a4a6e]"
               )}
             >
-              {type}
+              <Users className="w-4 h-4" />
+              <span className="text-sm font-medium">{type}</span>
             </button>
           ))}
         </div>
@@ -136,32 +288,18 @@ export function MatchmakingQueue({ userId, onMatchFound }: MatchmakingQueueProps
         <div className="flex items-center gap-4">
           <input
             type="range"
-            min="50"
+            min="100"
             max="10000"
-            step="50"
+            step="100"
             value={wagerPoints}
             onChange={(e) => setWagerPoints(Number(e.target.value))}
             className="flex-1 h-2 bg-[#1a1a2e] rounded-lg appearance-none cursor-pointer accent-[#a855f7]"
           />
-          <div className="px-4 py-2 bg-[#1a1a2e] border border-[#2a2a4e] rounded-lg text-[#f1f5f9] font-medium min-w-[100px] text-center">
-            {wagerPoints} pts
+          <div className="flex items-center gap-2 px-4 py-2 bg-[#1a1a2e] rounded-lg border border-[#2a2a4e]">
+            <span className="text-sm font-semibold text-[#f1f5f9]">
+              {wagerPoints.toLocaleString()} pts
+            </span>
           </div>
-        </div>
-        <div className="flex gap-2">
-          {[100, 500, 1000, 5000].map((amount) => (
-            <button
-              key={amount}
-              onClick={() => setWagerPoints(amount)}
-              className={cn(
-                "px-3 py-1 rounded-lg text-xs border transition-all",
-                wagerPoints === amount
-                  ? "bg-[#a855f7]/20 border-[#a855f7] text-[#a855f7]"
-                  : "bg-[#0d0d14] border-[#2a2a4e] text-[#64748b] hover:border-[#a855f7]/40"
-              )}
-            >
-              {amount}
-            </button>
-          ))}
         </div>
       </div>
 

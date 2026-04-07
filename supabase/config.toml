@@ -1,0 +1,7 @@
+project_id = "wx-arena"
+
+[functions.matchmaking]
+verify_jwt = true
+
+[functions.payments]
+verify_jwt = true

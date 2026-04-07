@@ -1,0 +1,26 @@
+name = "wx-arena"
+compatibility_date = "2024-01-01"
+
+# Build command
+[build]
+command = "npm run build"
+
+# Build output directory
+cwd = ".next"
+
+# Environment variables
+[vars]
+NODE_VERSION = "18"
+
+# Headers
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Routes
+[[routes]]
+pattern = "/api/*"
+custom_domain = true

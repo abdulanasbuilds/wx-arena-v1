@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable ESLint during build
+  // Disable ESLint during build for deployment
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -8,7 +8,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Images configuration
+  // Output standalone for Docker/VPS deployment
+  output: 'standalone',
+  // Images configuration - unoptimized for static export compatibility
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -16,9 +18,20 @@ const nextConfig = {
         protocol: "https",
         hostname: "**.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "**.googleusercontent.com",
+      },
     ],
   },
-  // PWA and Security headers configuration
+  // Experimental features for better performance
+  experimental: {
+    optimizeCss: true,
+    scrollRestoration: true,
+  },
+  // Trailing slash for better SEO
+  trailingSlash: true,
+  // Security headers configuration
   async headers() {
     return [
       {
@@ -44,6 +57,10 @@ const nextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains",
           },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
         ],
       },
       {
@@ -58,6 +75,24 @@ const nextConfig = {
             value: "/",
           },
         ],
+      },
+      {
+        source: "/api/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, max-age=0",
+          },
+        ],
+      },
+    ];
+  },
+  // Rewrites for API routes
+  async rewrites() {
+    return [
+      {
+        source: "/api/edge/:path*",
+        destination: `${process.env.SUPABASE_URL}/functions/v1/:path*`,
       },
     ];
   },
