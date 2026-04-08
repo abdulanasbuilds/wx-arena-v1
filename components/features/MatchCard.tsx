@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { GAMES } from "@/lib/utils/constants";
 import type { Match, MatchStatus } from "@/types/app.types";
+import { Zap, Trophy, TrendingUp, Shield, ArrowRight, User } from "lucide-react";
 
 interface MatchCardProps {
   match: Match;
@@ -18,176 +19,149 @@ function getStatusConfig(status: MatchStatus): {
   label: string;
   className: string;
   pulse: boolean;
+  icon: any;
 } {
   switch (status) {
     case "pending":
       return {
-        label: "Pending",
-        className: "bg-[#f59e0b]/15 text-[#f59e0b] border border-[#f59e0b]/30",
+        label: "SYNCING SIGNAL",
+        className: "bg-amber-500/15 text-amber-500 border-amber-500/30",
         pulse: false,
+        icon: TrendingUp
       };
     case "in_progress":
       return {
-        label: "Live",
-        className: "bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/30",
+        label: "LIVE COMBAT",
+        className: "bg-green-500/15 text-green-500 border-green-500/30",
         pulse: true,
+        icon: Zap
       };
     case "completed":
       return {
-        label: "Completed",
-        className: "bg-[#64748b]/15 text-[#64748b] border border-[#64748b]/30",
+        label: "ARCHIVED",
+        className: "bg-white/5 text-white/30 border-white/5",
         pulse: false,
+        icon: Shield
       };
     case "disputed":
       return {
-        label: "Disputed",
-        className: "bg-[#ef4444]/15 text-[#ef4444] border border-[#ef4444]/30",
+        label: "DISPUTED NODE",
+        className: "bg-red-500/15 text-red-500 border-red-500/30",
         pulse: false,
+        icon: Shield
       };
-    case "cancelled":
+    default:
       return {
-        label: "Cancelled",
-        className: "bg-[#64748b]/15 text-[#64748b] border border-[#64748b]/30",
+        label: status.toUpperCase(),
+        className: "bg-white/5 text-white/30 border-white/5",
         pulse: false,
+        icon: Shield
       };
   }
-}
-
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
-
-function PlayerName({
-  profile,
-  isCurrentUser,
-  align,
-}: {
-  profile?: { username: string } | null;
-  isCurrentUser: boolean;
-  align: "left" | "right";
-}) {
-  const name = profile?.username ?? "Unknown";
-  const initials = name.slice(0, 2).toUpperCase();
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2",
-        align === "right" && "flex-row-reverse",
-      )}
-    >
-      {/* Avatar */}
-      <span
-        className={cn(
-          "shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-          isCurrentUser
-            ? "bg-linear-to-br from-[#a855f7] to-[#7c3aed] text-white"
-            : "bg-linear-to-br from-[#2a2a4e] to-[#16213e] text-[#94a3b8]",
-        )}
-      >
-        {initials}
-      </span>
-      <span
-        className={cn(
-          "text-sm font-medium truncate max-w-20",
-          isCurrentUser ? "text-[#a855f7]" : "text-[#f1f5f9]",
-        )}
-      >
-        {name}
-      </span>
-    </div>
-  );
 }
 
 export function MatchCard({ match, currentUserId }: MatchCardProps) {
   const game = getGameInfo(match.game_id);
   const statusConfig = getStatusConfig(match.status);
-  const isP1Current = match.player_1_id === currentUserId;
-  const isP2Current = match.player_2_id === currentUserId;
-  const isInvolvedUser = isP1Current || isP2Current;
+  const p1 = match.player_1;
+  const p2 = match.player_2;
+  const isP1 = p1?.id === currentUserId;
+  const isP2 = p2?.id === currentUserId;
 
   return (
     <motion.div
-      whileHover={{ y: -3, scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      initial={{ opacity: 0, scale: 0.98 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
       className={cn(
-        "rounded-xl border p-4 bg-[#1a1a2e] transition-colors duration-200",
-        isInvolvedUser
-          ? "border-[#a855f7]/40 shadow-[0_0_12px_rgba(168,85,247,0.12)]"
-          : "border-[#2a2a4e] hover:border-[#2a2a4e]/80",
+        "group glass-pro rounded-[2rem] border-white/5 p-8 transition-all duration-500 relative overflow-hidden flex flex-col gap-8",
+        (isP1 || isP2) ? "border-primary/40 bg-primary/5" : "hover:border-primary/20"
       )}
     >
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl leading-none" aria-hidden="true">
-            {game.emoji}
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-[#f1f5f9] leading-tight">
-              {game.shortName}
-            </p>
-            <p className="text-xs text-[#94a3b8]">{match.match_type}</p>
-          </div>
-        </div>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-all pointer-events-none" />
 
-        {/* Status badge */}
-        <span
-          className={cn(
-            "flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full shrink-0",
-            statusConfig.className,
-          )}
-        >
-          {statusConfig.pulse && (
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22c55e]" />
-            </span>
-          )}
-          {statusConfig.label}
-        </span>
+      {/* Header HUD */}
+      <div className="flex items-center justify-between">
+         <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#0d0d14] border border-white/10 flex items-center justify-center p-2.5">
+               <span className="text-xl leading-none">{game.emoji}</span>
+            </div>
+            <div>
+               <h4 className="text-sm font-black text-white tracking-widest uppercase">{game.shortName}</h4>
+               <p className="text-[10px] text-white/20 font-bold uppercase tracking-[0.2em]">{match.match_type} SPECTRAL</p>
+            </div>
+         </div>
+         
+         <div className={cn(
+           "flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black tracking-widest uppercase border",
+           statusConfig.className
+         )}>
+           {statusConfig.pulse && (
+             <span className="relative flex h-2 w-2">
+               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75" />
+               <span className="relative inline-flex rounded-full h-2 w-2 bg-current" />
+             </span>
+           )}
+           <statusConfig.icon size={10} />
+           {statusConfig.label}
+         </div>
       </div>
 
-      {/* Players row */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <PlayerName
-          profile={match.player_1}
-          isCurrentUser={isP1Current}
-          align="left"
-        />
+      {/* Combatants VS row */}
+      <div className="flex items-center justify-between gap-6 py-4">
+         <div className="flex flex-col items-center gap-3 flex-1 min-w-0">
+            <div className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500",
+              isP1 ? "border-primary shadow-[0_0_20px_rgba(124,58,237,0.2)]" : "border-white/5"
+            )}>
+               <User className={cn(isP1 ? "text-primary" : "text-white/20")} size={32} />
+            </div>
+            <span className={cn(
+              "text-[10px] font-black uppercase tracking-widest truncate w-full text-center",
+              isP1 ? "text-primary" : "text-white/40"
+            )}>{p1?.username || "RECRUIT"}</span>
+         </div>
 
-        <span className="shrink-0 text-xs font-bold text-[#64748b] bg-[#16213e] px-2 py-0.5 rounded-md border border-[#2a2a4e]">
-          VS
-        </span>
+         <div className="flex flex-col items-center gap-1">
+            <div className="text-[10px] font-black text-white/10 italic">VS</div>
+            <div className="w-8 h-px bg-white/5" />
+         </div>
 
-        <PlayerName
-          profile={match.player_2}
-          isCurrentUser={isP2Current}
-          align="right"
-        />
+         <div className="flex flex-col items-center gap-3 flex-1 min-w-0">
+            <div className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500",
+              isP2 ? "border-primary shadow-[0_0_20px_rgba(124,58,237,0.2)]" : "border-white/5"
+            )}>
+               <User className={cn(isP2 ? "text-primary" : "text-white/20")} size={32} />
+            </div>
+            <span className={cn(
+              "text-[10px] font-black uppercase tracking-widest truncate w-full text-center",
+              isP2 ? "text-primary" : "text-white/40"
+            )}>{p2?.username || "RECRUIT"}</span>
+         </div>
       </div>
 
-      {/* Footer row */}
-      <div className="flex items-center justify-between pt-2 border-t border-[#2a2a4e]">
-        <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-[#f59e0b]">
-          🏆 <span>{match.wager_points.toLocaleString()} pts</span>
-        </span>
-        <span className="text-xs text-[#64748b]">
-          {formatRelativeTime(match.created_at)}
-        </span>
+      {/* Payout / Pot HUD */}
+      <div className="grid grid-cols-2 gap-4 mt-auto">
+         <div className="p-5 bg-white/[0.03] border border-white/5 rounded-2xl">
+            <p className="text-[9px] text-white/20 font-black uppercase tracking-widest mb-1">STAKES</p>
+            <div className="flex items-center gap-2">
+               <Trophy size={14} className="text-amber-500" />
+               <span className="text-lg font-black text-white tracking-tighter tabular-nums">{match.wager_points}</span>
+            </div>
+         </div>
+         <div className="p-5 bg-primary/10 border border-primary/20 rounded-2xl">
+            <p className="text-[9px] text-primary font-black uppercase tracking-widest mb-1">JACKPOT</p>
+            <div className="flex items-center gap-2">
+               <Zap size={14} className="text-primary" />
+               <span className="text-lg font-black text-white tracking-tighter tabular-nums">{(match.wager_points * 1.8).toFixed(0)}</span>
+            </div>
+         </div>
       </div>
+
+      <button className="w-full flex items-center justify-center gap-3 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.3em] hover:text-white hover:bg-white/[0.03] transition-all border-t border-white/5 -mb-2">
+         ANALYZE MATCH <ArrowRight size={14} />
+      </button>
     </motion.div>
   );
 }

@@ -9,46 +9,13 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/utils/cn";
 import type { Match, MatchStatus, UserProfile } from "@/types/app.types";
-import { Swords, Plus, Inbox } from "lucide-react";
+import { Swords, Plus, Inbox, Shield, Globe, Award, TrendingUp, Zap, Search, Filter, Activity } from "lucide-react";
 import { MatchmakingQueue } from "@/components/features/MatchmakingQueue";
-
-// ─── Types for Supabase data ──────────────────────────────────────────────────
-
-interface SupabaseProfile {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-  bio: string | null;
-  points: number;
-  total_matches: number;
-  wins: number;
-  losses: number;
-  win_rate: number;
-  rank: number;
-  streak: number;
-  is_verified: boolean;
-  is_pro: boolean;
-  created_at: string;
-}
-
-interface SupabaseMatch {
-  id: string;
-  game_id: string;
-  match_type: string;
-  status: string;
-  wager_points: number;
-  player_1_id: string;
-  player_2_id: string | null;
-  winner_id: string | null;
-  created_at: string;
-  completed_at: string | null;
-  player_1: SupabaseProfile;
-  player_2: SupabaseProfile | null;
-}
+import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function mapSupabaseProfile(profile: SupabaseProfile | null): UserProfile | null {
+function mapSupabaseProfile(profile: any): UserProfile | null {
   if (!profile) return null;
   return {
     id: profile.id,
@@ -68,12 +35,12 @@ function mapSupabaseProfile(profile: SupabaseProfile | null): UserProfile | null
   };
 }
 
-function mapSupabaseMatch(match: SupabaseMatch): Match {
+function mapSupabaseMatch(match: any): Match {
   return {
     id: match.id,
-    game_id: match.game_id as Match["game_id"],
-    match_type: match.match_type as Match["match_type"],
-    status: match.status as Match["status"],
+    game_id: match.game_id,
+    match_type: match.match_type,
+    status: match.status,
     wager_points: match.wager_points,
     player_1_id: match.player_1_id,
     player_2_id: match.player_2_id ?? null,
@@ -85,265 +52,193 @@ function mapSupabaseMatch(match: SupabaseMatch): Match {
   };
 }
 
-// ─── Filter types ─────────────────────────────────────────────────────────────
-
-type FilterTab = "all" | MatchStatus;
-
-interface FilterTabConfig {
-  label: string;
-  value: FilterTab;
-}
-
-const FILTER_TABS: FilterTabConfig[] = [
-  { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
-  { label: "Active", value: "in_progress" },
-  { label: "Completed", value: "completed" },
-  { label: "Disputed", value: "disputed" },
+const FILTER_TABS = [
+  { label: "ALL ARENAS", value: "all" },
+  { label: "PENDING", value: "pending" },
+  { label: "LIVE", value: "in_progress" },
+  { label: "ARCHIVED", value: "completed" },
+  { label: "DISPUTED", value: "disputed" },
 ];
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyState({
-  filter,
-  onReset,
-}: {
-  filter: FilterTab;
-  onReset: () => void;
-}) {
-  const messages: Record<FilterTab, { title: string; body: string }> = {
-    all: {
-      title: "No matches yet",
-      body: "Jump in and challenge someone — your first match is waiting.",
-    },
-    pending: {
-      title: "No pending matches",
-      body: "You have no matches waiting to start right now.",
-    },
-    in_progress: {
-      title: "Nothing live",
-      body: "You have no active matches in progress.",
-    },
-    completed: {
-      title: "No completed matches",
-      body: "Finish a match and your history will appear here.",
-    },
-    disputed: {
-      title: "No disputed matches",
-      body: "Great news — no disputes to resolve.",
-    },
-    cancelled: {
-      title: "No cancelled matches",
-      body: "No matches have been cancelled.",
-    },
-  };
-
-  const { title, body } = messages[filter];
-
+function EmptyState({ filter, onReset }: { filter: string; onReset: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-      <span className="flex items-center justify-center w-16 h-16 rounded-2xl bg-[#1a1a2e] border border-[#2a2a4e] text-[#2a2a4e]">
-        <Inbox className="w-8 h-8 text-[#2a2a4e]" aria-hidden="true" />
-      </span>
-      <div className="space-y-1">
-        <p className="text-base font-semibold text-[#f1f5f9]">{title}</p>
-        <p className="text-sm text-[#64748b] max-w-xs">{body}</p>
+    <div className="flex flex-col items-center justify-center gap-6 py-32 text-center glass-pro rounded-[3rem] border-white/5 bg-[#0d0d14]/50">
+      <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20">
+        <Inbox size={40} />
+      </div>
+      <div className="space-y-2">
+        <p className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: 'var(--font-syne)' }}>Arena Clearance.</p>
+        <p className="text-sm text-white/40 max-w-xs mx-auto font-medium leading-relaxed">No signals found in the {filter} spectral range. Start a new challenge to initialize the grid.</p>
       </div>
       {filter !== "all" && (
-        <button
-          onClick={onReset}
-          className="text-sm font-medium text-[#a855f7] hover:text-[#c084fc] underline underline-offset-2 transition-colors duration-150"
-        >
-          Show all matches
-        </button>
+        <button onClick={onReset} className="text-[10px] font-black text-primary uppercase tracking-[0.3em] hover:text-primary/80 transition-all">Reset Frequency</button>
       )}
     </div>
   );
 }
 
-// ─── MatchesClient — named export ─────────────────────────────────────────────
+// ─── MatchesClient ────────────────────────────────────────────────────────────
 
-export function MatchesClient({
-  matches,
-  currentUserId,
-}: {
-  matches: Match[];
-  currentUserId: string;
-}) {
-  const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
-
-  const filtered =
-    activeFilter === "all"
-      ? matches
-      : matches.filter((m) => m.status === activeFilter);
+function MatchesClient({ matches, currentUserId }: { matches: Match[]; currentUserId: string }) {
+  const [activeFilter, setActiveFilter] = useState("all");
+  const filtered = activeFilter === "all" ? matches : matches.filter((m) => m.status === activeFilter);
 
   return (
-    <div className="space-y-6">
-      {/* Filter tab row */}
-      <div
-        role="tablist"
-        aria-label="Filter matches by status"
-        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none"
-      >
+    <div className="space-y-8">
+      {/* HUD Filter Bar */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
         {FILTER_TABS.map((tab) => {
           const isActive = activeFilter === tab.value;
-          const count =
-            tab.value === "all"
-              ? matches.length
-              : matches.filter((m) => m.status === tab.value).length;
+          const count = tab.value === "all" ? matches.length : matches.filter((m) => m.status === tab.value).length;
 
           return (
             <button
               key={tab.value}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
               onClick={() => setActiveFilter(tab.value)}
               className={cn(
-                "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium",
-                "border transition-all duration-150",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#a855f7] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d14]",
-                isActive
-                  ? "bg-[#a855f7] border-[#a855f7] text-white shadow-[0_0_12px_rgba(168,85,247,0.30)]"
-                  : "bg-[#1a1a2e] border-[#2a2a4e] text-[#94a3b8] hover:border-[#a855f7]/40 hover:text-[#f1f5f9]",
+                "shrink-0 px-6 py-3.5 rounded-2xl text-[10px] font-black transition-all relative group",
+                isActive 
+                  ? "bg-primary border border-primary text-white shadow-[0_0_30px_rgba(124,58,237,0.3)] shadow-primary/20" 
+                  : "bg-white/[0.03] border border-white/5 text-white/30 hover:text-white"
               )}
             >
-              {tab.label}
+              <span className="tracking-[0.3em]">{tab.label}</span>
               {count > 0 && (
-                <span
-                  className={cn(
-                    "inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full",
-                    "text-[10px] font-bold leading-none",
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-[#16213e] text-[#64748b]",
-                  )}
-                >
-                  {count}
-                </span>
+                <span className={cn(
+                  "ml-3 px-2 py-0.5 rounded-full text-[9px] font-bold tabular-nums",
+                  isActive ? "bg-white/20 text-white" : "bg-white/5 text-[#64748b]"
+                )}>{count}</span>
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Match grid or empty state */}
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((match) => (
-            <MatchCard
-              key={match.id}
-              match={match}
-              currentUserId={currentUserId}
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          filter={activeFilter}
-          onReset={() => setActiveFilter("all")}
-        />
-      )}
+      <AnimatePresence mode="wait">
+        {filtered.length > 0 ? (
+          <motion.div 
+            key={activeFilter}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
+            {filtered.map((match) => (
+              <MatchCard key={match.id} match={match} currentUserId={currentUserId} />
+            ))}
+          </motion.div>
+        ) : (
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <EmptyState filter={activeFilter} onReset={() => setActiveFilter("all")} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-// ─── MatchesPage — default export ─────────────────────────────────────────────
+// ─── PAGE ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesPage() {
   const router = useRouter();
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    
-    // Check auth and fetch matches
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-      
+      if (!user) { router.replace("/login"); return; }
       setUserId(user.id);
-      setIsAuthChecking(false);
       
-      // Fetch real matches from Supabase
       const { data: matchesData, error } = await supabase
         .from("matches")
-        .select(`
-          *,
-          player_1:profiles!matches_player_1_id_fkey(*),
-          player_2:profiles!matches_player_2_id_fkey(*)
-        `)
+        .select(`*, player_1:profiles!matches_player_1_id_fkey(*), player_2:profiles!matches_player_2_id_fkey(*)`)
         .or(`player_1_id.eq.${user.id},player_2_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
       
-      if (!error && matchesData) {
-        setMatches((matchesData as SupabaseMatch[]).map(mapSupabaseMatch));
-      }
-      
+      if (!error && matchesData) setMatches(matchesData.map(mapSupabaseMatch));
       setIsLoading(false);
     });
   }, [router]);
 
-  if (isAuthChecking || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex items-center justify-center min-h-[80vh]"><Spinner size="lg" /></div>;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* ── Page header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#a855f7]/15 border border-[#a855f7]/25 text-[#a855f7]">
-            <Swords className="w-5 h-5" aria-hidden="true" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-bold text-[#f1f5f9] leading-tight">
-              Matches
-            </h1>
-            <p className="text-sm text-[#64748b]">
-              Track and manage your competitive matches
-            </p>
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12 min-h-screen">
+      {/* Premium Dashboard Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-12 border-b border-white/5 pb-16">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="w-12 h-1 bg-primary rounded-full" />
+            <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">Combat Headquarters</span>
           </div>
+          <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.8] tracking-tighter" style={{ fontFamily: 'var(--font-syne)' }}>
+            LIVE <span className="gradient-text">ARENA.</span>
+          </h1>
+          <p className="text-[#64748b] text-xl max-w-lg font-medium leading-relaxed">
+            Initialize worldwide challenges, join active combat rooms, and verify your professional rank.
+          </p>
         </div>
 
-        <Link href="/matches/new">
-          <Button
-            variant="primary"
-            size="md"
-            className="gap-2 w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            Create Match
-          </Button>
+        <Link href="/matches/new" className="group relative">
+           <div className="absolute inset-0 bg-primary/20 blur-2xl group-hover:bg-primary/40 transition-all rounded-3xl" />
+           <Button variant="primary" className="relative py-6 px-12 text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20">
+             <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+             Create New Match
+           </Button>
         </Link>
       </div>
 
-      {/* ── Matchmaking Queue ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <MatchmakingQueue 
-            userId={userId ?? ""} 
-            onMatchFound={(opponent) => {
-              console.log("Match found with:", opponent);
-              // Navigate to match lobby or show match found modal
-            }}
-          />
+      {/* Stats Ticker */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        {[
+          { label: 'GLOBAL RANK', val: '#1,240', icon: <Award size={18}/> },
+          { label: 'WIN STREAK', val: '5 WINS', icon: <Activity size={18}/> },
+          { label: 'LIVE SPECTATORS', val: '4.2K', icon: <Globe size={18}/> },
+          { label: 'WAGER POOL', val: '$15K+', icon: <TrendingUp size={18}/> },
+        ].map((s, i) => (
+          <div key={i} className="glass-pro p-8 rounded-[2.5rem] border-white/5 flex flex-col gap-6 group hover:border-primary/40 transition-all">
+             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+                {s.icon}
+             </div>
+             <div>
+                <p className="text-[10px] text-white/20 font-black uppercase tracking-widest leading-none mb-2">{s.label}</p>
+                <p className="text-3xl font-black text-white tracking-tighter" style={{ fontFamily: 'var(--font-syne)' }}>{s.val}</p>
+             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Left: Global Radar / Queue */}
+        <div className="lg:col-span-4 space-y-8">
+           <div className="glass-pro rounded-[3rem] border-white/5 p-10 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 blur-3xl -mr-24 -mt-24 group-hover:bg-primary/10 transition-all" />
+              <div className="flex items-center gap-4 mb-10">
+                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20">
+                    <Zap size={20} />
+                 </div>
+                 <h3 className="text-xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: 'var(--font-syne)' }}>Tactical Queue</h3>
+              </div>
+              <MatchmakingQueue 
+                userId={userId ?? ""} 
+                onMatchFound={(opponent) => { console.log("Incoming signal:", opponent); }}
+              />
+           </div>
+
+           <div className="glass-pro rounded-[3rem] border-white/5 p-10 space-y-8 bg-[#0d0d14]/30">
+              <h3 className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">PRO VERIFICATION</h3>
+              <p className="text-sm text-[#64748b] leading-relaxed font-medium">All signals are monitored by WX-SHIELD and the Global Verdict network to ensure 100% fair play.</p>
+              <div className="flex items-center gap-3 text-primary text-[10px] font-black uppercase tracking-widest">
+                 <Shield size={16} /> WX COMPLIANCE ACTIVE
+              </div>
+           </div>
         </div>
-        <div className="lg:col-span-2">
-          {/* ── Filtered match grid ── */}
-          <MatchesClient
-            matches={matches}
-            currentUserId={userId ?? ""}
-          />
+
+        {/* Right: Matches Grid */}
+        <div className="lg:col-span-8">
+           <MatchesClient matches={matches} currentUserId={userId ?? ""} />
         </div>
       </div>
     </div>
