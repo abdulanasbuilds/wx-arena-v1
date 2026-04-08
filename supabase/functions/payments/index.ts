@@ -282,6 +282,11 @@ serve(async (req) => {
       status: 400,
       headers,
     });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message || "Internal server error" }), {
+      status: 500,
+      headers,
+    });
   }
 
   // Handle GET requests for fetching withdrawals

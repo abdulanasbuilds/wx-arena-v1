@@ -39,7 +39,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "notif-3",
     type: "message",
     title: "New Message",
-    message: "SteelNova: "GG! Rematch tomorrow?"",
+    message: 'SteelNova: "GG! Rematch tomorrow?"',
     timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
     read: true,
     action_url: "/chat",

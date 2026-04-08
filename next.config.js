@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable ESLint during build for deployment
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // Disable TypeScript errors during build
   typescript: {
     ignoreBuildErrors: true,
@@ -89,10 +85,11 @@ const nextConfig = {
   },
   // Rewrites for API routes
   async rewrites() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rhjrnploeuvmknttimme.supabase.co';
     return [
       {
         source: "/api/edge/:path*",
-        destination: `${process.env.SUPABASE_URL}/functions/v1/:path*`,
+        destination: `${supabaseUrl}/functions/v1/:path*`,
       },
     ];
   },

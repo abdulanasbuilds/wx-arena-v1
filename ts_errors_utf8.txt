@@ -1,0 +1,6 @@
+﻿components/features/NotificationsDropdown.tsx(42,27): error TS1005: ',' expected.
+components/features/NotificationsDropdown.tsx(42,31): error TS1005: ',' expected.
+components/features/NotificationsDropdown.tsx(42,39): error TS1005: ',' expected.
+components/features/NotificationsDropdown.tsx(42,48): error TS1005: ',' expected.
+components/features/NotificationsDropdown.tsx(42,50): error TS1005: ':' expected.
+supabase/functions/payments/index.ts(288,3): error TS1472: 'catch' or 'finally' expected.
