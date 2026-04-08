@@ -76,12 +76,12 @@ function mapSupabaseMatch(match: SupabaseMatch): Match {
     status: match.status as Match["status"],
     wager_points: match.wager_points,
     player_1_id: match.player_1_id,
-    player_2_id: match.player_2_id || undefined,
-    winner_id: match.winner_id || undefined,
+    player_2_id: match.player_2_id ?? null,
+    winner_id: match.winner_id ?? null,
     created_at: match.created_at,
     completed_at: match.completed_at,
     player_1: mapSupabaseProfile(match.player_1)!,
-    player_2: mapSupabaseProfile(match.player_2) || undefined,
+    player_2: mapSupabaseProfile(match.player_2),
   };
 }
 

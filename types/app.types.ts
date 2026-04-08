@@ -1,4 +1,4 @@
-export type GameId = "efootball" | "dls" | "free-fire" | "league-of-legends" | "cod" | "fortnite";
+export type GameId = "efootball" | "dls" | "free-fire" | "league-of-legends" | "cod" | "fortnite" | "pubg" | "apex-legends";
 export type MatchType = "1v1" | "2v2" | "3v3" | "Squad";
 export type MatchStatus = "pending" | "in_progress" | "completed" | "disputed" | "cancelled";
 export type TournamentStatus = "open" | "in_progress" | "completed" | "cancelled";
@@ -28,12 +28,12 @@ export interface Match {
   status: MatchStatus;
   wager_points: number;
   player_1_id: string;
-  player_2_id: string;
+  player_2_id: string | null;
   winner_id: string | null;
   created_at: string;
   completed_at: string | null;
-  player_1?: UserProfile;
-  player_2?: UserProfile;
+  player_1?: UserProfile | null;
+  player_2?: UserProfile | null;
 }
 
 export interface Tournament {
@@ -76,6 +76,8 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   user?: UserProfile;
+  username?: string;
+  avatar_url?: string | null;
 }
 
 export interface ChatRoom {

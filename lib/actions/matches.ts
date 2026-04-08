@@ -11,13 +11,25 @@ export async function createMatch(formData: {
 }) {
   const supabase = await createClient();
   
-  // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, error: "Not authenticated" };
   }
 
-  // Create match
+  // 1. Deduct points if wager > 0
+  if (formData.wagerPoints > 0) {
+    const { data: success, error: deductError } = await supabase.rpc("deduct_points_secure", {
+      u_id: user.id,
+      amount: formData.wagerPoints,
+      reason: `Match creation wager: ${formData.gameId}`,
+    });
+
+    if (deductError || !success) {
+      return { success: false, error: deductError?.message || "Insufficient points for wager" };
+    }
+  }
+
+  // 2. Create match
   const { data, error } = await supabase
     .from("matches")
     .insert({
@@ -32,6 +44,14 @@ export async function createMatch(formData: {
     .single();
 
   if (error) {
+    // Refund points if match creation fails
+    if (formData.wagerPoints > 0) {
+      await supabase.rpc("award_points_secure", {
+        u_id: user.id,
+        amount: formData.wagerPoints,
+        reason: "Refund: Match creation failed",
+      });
+    }
     return { success: false, error: error.message };
   }
 
@@ -47,7 +67,33 @@ export async function joinMatch(matchId: string) {
     return { success: false, error: "Not authenticated" };
   }
 
-  // Update match to add player 2
+  // Get match wager info
+  const { data: match } = await supabase
+    .from("matches")
+    .select("wager_points, status")
+    .eq("id", matchId)
+    .single();
+
+  if (!match || match.status !== "waiting") {
+    return { success: false, error: "Match no longer available" };
+  }
+
+  // 1. Deduct points for joiner
+  if (match.wager_points > 0) {
+    const { data: success, error: deductError } = await supabase.rpc("deduct_points_secure", {
+      u_id: user.id,
+      amount: match.wager_points,
+      reason: `Match entry wager: ${matchId}`,
+      ref_type: "match",
+      ref_id: matchId,
+    });
+
+    if (deductError || !success) {
+      return { success: false, error: deductError?.message || "Insufficient points for wager" };
+    }
+  }
+
+  // 2. Update match to add player 2
   const { data, error } = await supabase
     .from("matches")
     .update({
@@ -60,6 +106,16 @@ export async function joinMatch(matchId: string) {
     .single();
 
   if (error) {
+    // Refund points if join fails
+    if (match.wager_points > 0) {
+      await supabase.rpc("award_points_secure", {
+        u_id: user.id,
+        amount: match.wager_points,
+        reason: "Refund: Failed to join match",
+        ref_type: "match",
+        ref_id: matchId,
+      });
+    }
     return { success: false, error: error.message };
   }
 
@@ -93,19 +149,13 @@ export async function submitMatchResult(matchId: string, winnerId: string, score
     return { success: false, error: "Not a participant in this match" };
   }
 
-  // Update match with result
-  const { data, error } = await supabase
-    .from("matches")
-    .update({
-      winner_id: winnerId,
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      player_1_score: scores?.player1Score,
-      player_2_score: scores?.player2Score,
-    })
-    .eq("id", matchId)
-    .select()
-    .single();
+  // Update match with result via secure RPC
+  const { error } = await supabase.rpc("submit_match_result_secure", {
+    m_id: matchId,
+    w_id: winnerId,
+    p1_score: scores?.player1Score,
+    p2_score: scores?.player2Score,
+  });
 
   if (error) {
     return { success: false, error: error.message };
@@ -113,7 +163,9 @@ export async function submitMatchResult(matchId: string, winnerId: string, score
 
   // Update player stats
   await updatePlayerStats(match.player_1_id);
-  await updatePlayerStats(match.player_2_id);
+  if (match.player_2_id) {
+    await updatePlayerStats(match.player_2_id);
+  }
 
   revalidatePath("/matches");
   return { success: true, data };

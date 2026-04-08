@@ -5,29 +5,23 @@ import { createClient } from "@/lib/supabase/client";
 
 interface Tournament {
   id: string;
-  name: string;
-  description: string | null;
+  title: string;
   game_id: string;
-  format: string;
   max_participants: number;
+  current_participants: number;
   entry_fee: number;
   prize_pool: number;
-  start_date: string;
-  end_date: string | null;
-  registration_deadline: string;
-  status: "draft" | "registration" | "in_progress" | "completed" | "cancelled";
-  rules: string | null;
-  created_by: string;
+  start_time: string;
+  status: "open" | "in_progress" | "completed" | "cancelled";
   created_at: string;
-  updated_at: string;
 }
 
 interface TournamentEntry {
   id: string;
   tournament_id: string;
   user_id: string;
-  status: "registered" | "confirmed" | "eliminated" | "winner";
-  registered_at: string;
+  joined_at: string;
+  final_rank: number | null;
 }
 
 interface UseTournamentsOptions {
@@ -54,7 +48,7 @@ export function useTournaments(options: UseTournamentsOptions = {}) {
         let query = supabase
           .from("tournaments")
           .select("*")
-          .order("start_date", { ascending: true });
+          .order("start_time", { ascending: true });
 
         if (status !== "all") {
           query = query.eq("status", status);
@@ -66,7 +60,11 @@ export function useTournaments(options: UseTournamentsOptions = {}) {
           throw fetchError;
         }
 
-        setTournaments(data || []);
+        setTournaments((data as any[] || []).map((t: any) => ({
+          ...t,
+          status: t.status as Tournament["status"],
+          game_id: t.game_id as any,
+        })));
 
         // Fetch user's entries if requested
         if (includeMyEntries && userId) {

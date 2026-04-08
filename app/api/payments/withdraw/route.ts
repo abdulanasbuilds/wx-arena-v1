@@ -82,8 +82,8 @@ export async function POST(request: Request) {
     // Log transaction
     await supabase.from("wallet_transactions").insert({
       user_id: userId,
-      type: "withdrawal",
-      amount: -pointsToDeduct,
+      type: "spend",
+      points: -pointsToDeduct,
       description: `Withdrawal request #${withdrawal.id} - ₦${amount}`,
       reference_type: "withdrawal",
       reference_id: withdrawal.id,

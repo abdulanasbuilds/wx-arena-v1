@@ -20,7 +20,7 @@ import type { CookieOptions } from "@supabase/ssr";
 // the static type back to what supabase-js itself would infer.
 // ---------------------------------------------------------------------------
 
-export type TypedSupabaseClient = SupabaseClient<Database, "public">;
+import { type TypedSupabaseClient } from "./client";
 
 export async function createClient(): Promise<TypedSupabaseClient> {
   const cookieStore = await cookies();

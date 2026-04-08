@@ -31,8 +31,8 @@ export function useFriends(userId: string) {
           requester_id,
           addressee_id,
           status,
-          profiles!friends_requester_id_fkey(id, username, avatar_url),
-          profiles!friends_addressee_id_fkey(id, username, avatar_url)
+          requester:profiles!friends_requester_id_fkey(id, username, avatar_url),
+          addressee:profiles!friends_addressee_id_fkey(id, username, avatar_url)
         `)
         .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
         .eq("status", "accepted");
@@ -44,7 +44,7 @@ export function useFriends(userId: string) {
 
       const formatted: Friend[] = data.map((f: any) => {
         const isRequester = f.requester_id === userId;
-        const friendProfile = isRequester ? f.profiles_addressee_id_fkey : f.profiles_requester_id_fkey;
+        const friendProfile: any = isRequester ? f.addressee : f.requester;
         
         return {
           id: f.id,
@@ -69,7 +69,7 @@ export function useFriends(userId: string) {
           requester_id,
           addressee_id,
           status,
-          profiles!friends_requester_id_fkey(id, username, avatar_url)
+          requester:profiles!friends_requester_id_fkey(id, username, avatar_url)
         `)
         .eq("addressee_id", userId)
         .eq("status", "pending");
@@ -79,8 +79,8 @@ export function useFriends(userId: string) {
       const formatted: Friend[] = data.map((f: any) => ({
         id: f.id,
         user_id: f.requester_id,
-        username: f.profiles_requester_id_fkey?.username || "Unknown",
-        avatar_url: f.profiles_requester_id_fkey?.avatar_url,
+        username: (f.requester as any)?.username || "Unknown",
+        avatar_url: (f.requester as any)?.avatar_url,
         is_online: false,
         last_seen: new Date().toISOString(),
         status: f.status,

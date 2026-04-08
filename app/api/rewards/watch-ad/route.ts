@@ -107,77 +107,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // 4. Award points — two sequential writes.
-    //    TODO: Replace with a Supabase SQL RPC function for atomicity in production.
+    // 4. Award points via secure RPC.
+    const { error: awardError } = await supabase.rpc("award_points_secure", {
+      u_id: user.id,
+      amount: AD_REWARD_POINTS,
+      reason: "Watch Ad reward",
+    });
 
-    // 4a. Fetch the user's current points balance.
-    const { data: profileData, error: profileError } = await (supabase
+    if (awardError) {
+      console.error("[POST /api/rewards/watch-ad] Failed to award points:", awardError);
+      return NextResponse.json(
+        { error: "Failed to credit reward points." },
+        { status: 500 }
+      );
+    }
+
+    // Fetch new balance to return
+    const { data: profile } = await supabase
       .from("profiles")
       .select("points")
       .eq("id", user.id)
-      .single() as unknown as SingleResult<Pick<ProfileRow, "points">>);
+      .single();
 
-    if (profileError || !profileData) {
-      console.error(
-        "[POST /api/rewards/watch-ad] Failed to fetch profile:",
-        profileError,
-      );
-      return NextResponse.json(
-        { error: "Failed to retrieve user profile." },
-        { status: 500 },
-      );
-    }
-
-    const currentPoints: number = profileData.points;
-    const newBalance: number = currentPoints + AD_REWARD_POINTS;
-
-    // 4b. Update the points balance on the profile row.
-    //    NOTE: The `as any` cast on the update payload is required due to the same
-    //    @supabase/ssr v0.6 regression that makes Update payload types collapse to
-    //    `never` at the call-site even though the payload is correctly typed above.
-    const pointsUpdate: ProfileUpdate = { points: newBalance };
-
-    const { error: updateError } = await (supabase
-      .from("profiles")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(pointsUpdate as unknown as never)
-      .eq("id", user.id) as unknown as MutationResult);
-
-    if (updateError) {
-      console.error(
-        "[POST /api/rewards/watch-ad] Failed to update points:",
-        updateError,
-      );
-      return NextResponse.json(
-        { error: "Failed to update points balance." },
-        { status: 500 },
-      );
-    }
-
-    // 4c. Log the wallet transaction — also anchors the cooldown check in step 3
-    //    on the next request.
-    //    NOTE: Same `as any` cast as above for the Insert payload type.
-    const txInsert: WalletTransactionInsert = {
-      user_id: user.id,
-      type: "earn",
-      points: AD_REWARD_POINTS,
-      description: "Watch Ad reward",
-    };
-
-    const { error: txError } = await (supabase
-      .from("wallet_transactions")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .insert(txInsert as any) as unknown as MutationResult);
-
-    if (txError) {
-      // Points were already credited above — log the inconsistency but do not
-      // attempt a rollback here.
-      // TODO: Handle this partial failure atomically via an RPC in production.
-      console.error(
-        "[POST /api/rewards/watch-ad] Failed to log wallet transaction (points already credited):",
-        txError,
-      );
-    }
+    const newBalance = profile?.points || 0;
 
     // 5. Return success payload.
     return NextResponse.json(

@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 interface WalletTransaction {
   id: string;
   user_id: string;
-  type: "earned" | "spent" | "purchased" | "refunded";
-  amount: number;
+  type: "earn" | "spend" | "wager" | "win" | "refund" | "purchase";
+  points: number;
   description: string | null;
   reference_type: string | null;
   reference_id: string | null;
@@ -69,17 +69,21 @@ export function useWallet(userId?: string) {
 
         const totalEarned =
           transactions
-            ?.filter((t) => t.type === "earned" || t.type === "refunded")
-            .reduce((sum, t) => sum + t.amount, 0) || 0;
+            ?.filter((t) => t.type === "earn" || t.type === "win" || t.type === "refund")
+            .reduce((sum, t) => sum + t.points, 0) || 0;
 
         const totalSpent =
           transactions
-            ?.filter((t) => t.type === "spent" || t.type === "purchased")
-            .reduce((sum, t) => sum + t.amount, 0) || 0;
+            ?.filter((t) => t.type === "spend" || t.type === "wager" || t.type === "purchase")
+            .reduce((sum, t) => sum + t.points, 0) || 0;
 
         setData({
           balance: profile?.points || 0,
-          transactions: transactions || [],
+          transactions: (transactions as any[] || []).map(t => ({
+            ...t,
+            type: t.type as WalletTransaction["type"],
+            status: t.status as any
+          })),
           totalEarned,
           totalSpent,
         });

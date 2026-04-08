@@ -51,6 +51,10 @@ export async function updateSession(request: NextRequest) {
     "/rewards",
     "/profile",
     "/settings",
+    "/friends",
+    "/communities",
+    "/buy-points",
+    "/withdraw"
   ];
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path),

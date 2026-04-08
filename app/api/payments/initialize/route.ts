@@ -57,8 +57,8 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     await supabase.from("wallet_transactions").insert({
       user_id: userId,
-      type: "purchased",
-      amount: metadata?.points || 0,
+      type: "purchase",
+      points: metadata?.points || 0,
       description: `Points purchase - ${amount} NGN`,
       reference_type: "paystack",
       reference_id: reference,

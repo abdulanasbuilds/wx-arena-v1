@@ -1,0 +1,27 @@
+﻿app/api/admin/withdrawals/process/route.ts(3,10): error TS2305: Module '"@/lib/actions/wallet"' has no exported member 'logWalletTransaction'.
+components/auth/SignOutButton.tsx(46,7): error TS2322: Type '"default" | "outline" | "ghost"' is not assignable to type 'ButtonVariant | undefined'.
+  Type '"default"' is not assignable to type 'ButtonVariant | undefined'.
+components/features/MatchCard.tsx(166,11): error TS2322: Type 'UserProfile | null | undefined' is not assignable to type '{ username: string; } | undefined'.
+  Type 'null' is not assignable to type '{ username: string; } | undefined'.
+components/features/MatchCard.tsx(176,11): error TS2322: Type 'UserProfile | null | undefined' is not assignable to type '{ username: string; } | undefined'.
+  Type 'null' is not assignable to type '{ username: string; } | undefined'.
+hooks/useCommunities.ts(124,28): error TS2345: Argument of type '"increment_community_members"' is not assignable to parameter of type 'never'.
+hooks/useCommunities.ts(143,28): error TS2345: Argument of type '"decrement_community_members"' is not assignable to parameter of type 'never'.
+hooks/useMatches.ts(53,20): error TS2345: Argument of type '{ completed_at: string | null; created_at: string; game_id: string; id: string; match_type: string; player_1_id: string; player_2_id: string | null; status: string; wager_points: number; winner_id: string | null; player_1: { ...; }; player_2: { ...; } | null; }[]' is not assignable to parameter of type 'SetStateAction<Match[]>'.
+  Type '{ completed_at: string | null; created_at: string; game_id: string; id: string; match_type: string; player_1_id: string; player_2_id: string | null; status: string; wager_points: number; winner_id: string | null; player_1: { ...; }; player_2: { ...; } | null; }[]' is not assignable to type 'Match[]'.
+    Type '{ completed_at: string | null; created_at: string; game_id: string; id: string; match_type: string; player_1_id: string; player_2_id: string | null; status: string; wager_points: number; winner_id: string | null; player_1: { ...; }; player_2: { ...; } | null; }' is not assignable to type 'Match'.
+      Types of property 'game_id' are incompatible.
+        Type 'string' is not assignable to type 'GameId'.
+hooks/useTournaments.ts(69,24): error TS2345: Argument of type '{ created_at: string; created_by: string | null; current_participants: number; entry_fee: number; game_id: string; id: string; max_participants: number; prize_pool: number; start_time: string; status: string; title: string; }[]' is not assignable to parameter of type 'SetStateAction<Tournament[]>'.
+  Type '{ created_at: string; created_by: string | null; current_participants: number; entry_fee: number; game_id: string; id: string; max_participants: number; prize_pool: number; start_time: string; status: string; title: string; }[]' is not assignable to type 'Tournament[]'.
+    Type '{ created_at: string; created_by: string | null; current_participants: number; entry_fee: number; game_id: string; id: string; max_participants: number; prize_pool: number; start_time: string; status: string; title: string; }' is missing the following properties from type 'Tournament': name, description, format, start_date, and 4 more.
+hooks/useTournaments.ts(82,24): error TS2345: Argument of type '{ final_rank: number | null; id: string; joined_at: string; tournament_id: string; user_id: string; }[]' is not assignable to parameter of type 'SetStateAction<TournamentEntry[]>'.
+  Type '{ final_rank: number | null; id: string; joined_at: string; tournament_id: string; user_id: string; }[]' is not assignable to type 'TournamentEntry[]'.
+    Type '{ final_rank: number | null; id: string; joined_at: string; tournament_id: string; user_id: string; }' is missing the following properties from type 'TournamentEntry': status, registered_at
+hooks/useWallet.ts(82,11): error TS2322: Type '{ created_at: string; description: string; id: string; points: number; reference_id: string | null; reference_type: string | null; status: string; type: string; user_id: string; }[]' is not assignable to type 'WalletTransaction[]'.
+  Type '{ created_at: string; description: string; id: string; points: number; reference_id: string | null; reference_type: string | null; status: string; type: string; user_id: string; }' is not assignable to type 'WalletTransaction'.
+    Types of property 'type' are incompatible.
+      Type 'string' is not assignable to type '"refund" | "earn" | "spend" | "wager" | "win" | "purchase"'.
+lib/actions/matches.ts(116,27): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/actions/tournaments.ts(117,7): error TS18048: 'tournament.entry_fee' is possibly 'undefined'.

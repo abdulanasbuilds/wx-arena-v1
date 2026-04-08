@@ -50,7 +50,14 @@ export function useMatches(options: UseMatchesOptions = {}) {
           throw fetchError;
         }
 
-        setMatches(data || []);
+        setMatches((data as any[] || []).map((m: any) => ({
+          ...m,
+          game_id: m.game_id as any,
+          match_type: m.match_type as any,
+          status: m.status as any,
+          player_1: m.player_1,
+          player_2: m.player_2,
+        })));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch matches");
       } finally {

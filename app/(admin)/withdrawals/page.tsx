@@ -11,7 +11,7 @@ export default async function AdminWithdrawalsPage({
   // Fetch all withdrawal requests
   const { data: withdrawals } = await supabase
     .from("withdrawal_requests")
-    .select("*, profiles:user_id(id, username, email)")
+    .select("*, profiles:user_id(id, username)")
     .order("created_at", { ascending: false });
 
   // Fetch specific withdrawal if ID provided
@@ -19,7 +19,7 @@ export default async function AdminWithdrawalsPage({
   if (searchParams.id) {
     const { data } = await supabase
       .from("withdrawal_requests")
-      .select("*, profiles:user_id(id, username, email)")
+      .select("*, profiles:user_id(id, username)")
       .eq("id", searchParams.id)
       .single();
     selectedWithdrawal = data;
@@ -80,9 +80,6 @@ export default async function AdminWithdrawalsPage({
               <p className="font-medium text-[#f1f5f9]">
                 {selectedWithdrawal.profiles?.username || "Unknown"}
               </p>
-              <p className="text-sm text-[#64748b]">
-                {selectedWithdrawal.profiles?.email}
-              </p>
             </div>
             <div>
               <p className="text-sm text-[#64748b]">Amount</p>
@@ -131,7 +128,7 @@ export default async function AdminWithdrawalsPage({
               </button>
               <button
                 type="submit"
-                formaction="/api/admin/withdrawals/process?action=reject"
+                formAction="/api/admin/withdrawals/process?action=reject"
                 className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
               >
                 Reject

@@ -73,7 +73,7 @@ function PlayerName({
   isCurrentUser,
   align,
 }: {
-  profile?: { username: string };
+  profile?: { username: string } | null;
   isCurrentUser: boolean;
   align: "left" | "right";
 }) {

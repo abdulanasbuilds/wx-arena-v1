@@ -34,7 +34,7 @@ export async function registerForTournament(tournamentId: string) {
     return { success: false, error: "Tournament not found" };
   }
 
-  // Check user's points balance
+  // Get profile for current balance (to show error early if possible, though RPC checks too)
   const { data: profile } = await supabase
     .from("profiles")
     .select("points")
@@ -45,43 +45,38 @@ export async function registerForTournament(tournamentId: string) {
     return { success: false, error: "Insufficient points for entry fee" };
   }
 
-  // Deduct entry fee
-  const { error: pointsError } = await supabase
-    .from("profiles")
-    .update({ points: profile.points - tournament.entry_fee })
-    .eq("id", user.id);
+  // Deduct entry fee via secure RPC
+  const { data: deductSuccess, error: deductError } = await supabase.rpc("deduct_points_secure", {
+    u_id: user.id,
+    amount: tournament.entry_fee,
+    reason: `Tournament entry fee: ${tournamentId}`,
+    ref_type: "tournament",
+    ref_id: tournamentId,
+  });
 
-  if (pointsError) {
-    return { success: false, error: pointsError.message };
+  if (deductError || !deductSuccess) {
+    return { success: false, error: deductError?.message || "Failed to deduct entry fee" };
   }
 
   // Create entry
-  const { error } = await supabase
+  const { error: entryError } = await supabase
     .from("tournament_entries")
     .insert({
       tournament_id: tournamentId,
       user_id: user.id,
-      status: "registered",
     });
 
-  if (error) {
-    // Refund points on error
-    await supabase
-      .from("profiles")
-      .update({ points: profile.points })
-      .eq("id", user.id);
-    return { success: false, error: error.message };
+  if (entryError) {
+    // Refund points if entry creation fails
+    await supabase.rpc("award_points_secure", {
+      u_id: user.id,
+      amount: tournament.entry_fee,
+      reason: `Refund: Tournament entry failed for ${tournamentId}`,
+      ref_type: "tournament",
+      ref_id: tournamentId,
+    });
+    return { success: false, error: entryError.message };
   }
-
-  // Log transaction
-  await supabase.from("wallet_transactions").insert({
-    user_id: user.id,
-    type: "spent",
-    amount: tournament.entry_fee,
-    description: `Tournament entry fee: ${tournamentId}`,
-    reference_type: "tournament",
-    reference_id: tournamentId,
-  });
 
   revalidatePath("/tournaments");
   return { success: true };
@@ -114,29 +109,21 @@ export async function cancelTournamentRegistration(tournamentId: string) {
     .eq("id", tournamentId)
     .single();
 
-  // Refund entry fee
-  if (tournament?.entry_fee > 0) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("points")
-      .eq("id", user.id)
-      .single();
+  // Refund entry fee via secure RPC
+  if (tournament && tournament.entry_fee > 0) {
+    const { error: refundError } = await supabase.rpc("award_points_secure", {
+      u_id: user.id,
+      amount: tournament.entry_fee,
+      reason: `Tournament registration refund: ${tournamentId}`,
+      ref_type: "tournament",
+      ref_id: tournamentId,
+    });
 
-    if (profile) {
-      await supabase
-        .from("profiles")
-        .update({ points: profile.points + tournament.entry_fee })
-        .eq("id", user.id);
-
-      // Log refund
-      await supabase.from("wallet_transactions").insert({
-        user_id: user.id,
-        type: "refunded",
-        amount: tournament.entry_fee,
-        description: `Tournament registration refund: ${tournamentId}`,
-        reference_type: "tournament",
-        reference_id: tournamentId,
-      });
+    if (refundError) {
+      console.error("[Tournament Action] Refund failed:", refundError);
+      // We continue to delete entry? Or fail? 
+      // Better to fail if refund failed to avoid double registration issues.
+      return { success: false, error: "Failed to process refund." };
     }
   }
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { LogOut } from "lucide-react";
 
 interface SignOutButtonProps {
-  variant?: "default" | "ghost" | "outline";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   className?: string;
   showIcon?: boolean;

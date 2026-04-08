@@ -166,12 +166,12 @@ export default async function AdminDashboardPage() {
               <div className="flex items-center gap-4">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    transaction.type === "earned" || transaction.type === "purchased"
+                    transaction.type === "earn" || transaction.type === "purchase" || transaction.type === "win"
                       ? "bg-green-500/20"
                       : "bg-red-500/20"
                   }`}
                 >
-                  {transaction.type === "earned" || transaction.type === "purchased" ? (
+                  {transaction.type === "earn" || transaction.type === "purchase" || transaction.type === "win" ? (
                     <TrendingUp className="w-5 h-5 text-green-500" />
                   ) : (
                     <Wallet className="w-5 h-5 text-red-500" />
@@ -189,15 +189,15 @@ export default async function AdminDashboardPage() {
               </div>
               <div
                 className={`font-semibold ${
-                  transaction.type === "earned" || transaction.type === "purchased"
+                  transaction.type === "earn" || transaction.type === "purchase" || transaction.type === "win"
                     ? "text-green-500"
                     : "text-red-500"
                 }`}
               >
-                {transaction.type === "earned" || transaction.type === "purchased"
+                {transaction.type === "earn" || transaction.type === "purchase" || transaction.type === "win"
                   ? "+"
                   : "-"}
-                {Math.abs(transaction.amount).toLocaleString()} pts
+                {Math.abs(transaction.points).toLocaleString()} pts
               </div>
             </div>
           ))}

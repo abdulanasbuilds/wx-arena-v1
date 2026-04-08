@@ -147,7 +147,7 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
-  const profile: UserProfile = profileError || !profileData
+  const profile: UserProfile = (profileError || !profileData)
     ? {
         id: user.id,
         username: user.email?.split("@")[0] || "Player",
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
         is_pro: false,
         created_at: new Date().toISOString(),
       }
-    : mapSupabaseProfile(profileData as SupabaseProfile)!;
+    : mapSupabaseProfile(profileData as unknown as SupabaseProfile)!;
 
   // Fetch recent matches (where user is player_1 or player_2)
   const { data: matchesData, error: matchesError } = await supabase

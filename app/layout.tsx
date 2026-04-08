@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { PWAProvider } from "@/components/pwa";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -28,15 +29,15 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "WX ARENA — Skill-Based Gaming Platform",
+    default: "WX ARENA — Global Skill-Based Gaming Platform",
     template: "%s | WX ARENA",
   },
   description:
-    "Compete in skill-based 1v1 matches, tournaments, and leaderboards for eFootball, Dream League Soccer, Free Fire, PUBG Mobile, and more. Made for Africa, Southeast Asia, and Latin America.",
-  keywords: ["gaming", "esports", "efootball", "dream league soccer", "free fire", "pubg mobile", "tournaments", "skill-based", "Africa gaming"],
+    "The world's premier platform for skill-based matches and professional tournaments. Compete globally in eFootball, EA Sports FC 25, Free Fire, PUBG Mobile, and more.",
+  keywords: ["global gaming", "esports", "efootball 2025", "ea fc 25", "free fire", "pubg mobile", "tournaments", "skill-based matches", "worldwide gaming"],
   authors: [{ name: "WX ARENA" }],
   creator: "WX ARENA",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://wx-arena.com"),
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -59,11 +60,8 @@ export const metadata: Metadata = {
     title: "WX ARENA",
   },
   icons: {
-    icon: [
-      { url: "/icons/icon-32x32.png", sizes: "32x32" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192" },
-    ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    icon: "/favicon.ico",
+    apple: "/logo.png",
   },
 };
 

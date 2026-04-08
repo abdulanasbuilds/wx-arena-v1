@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     const userId = transaction.user_id;
-    const points = transaction.amount;
+    const points = transaction.points;
 
     // Credit points to user
     const { data: profile } = await supabase
